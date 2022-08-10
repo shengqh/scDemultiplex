@@ -1,0 +1,21 @@
+Encoding: UTF-8
+Package: scDemultiplex
+Type: Package
+Title: a package for 
+Version: 0.0.1
+Date: 2022-08-10
+Authors@R: c(person("Li-ching", "Huang", email = "li-ching.huang.1@vumc.org", role = c("aut")),
+             person("Yu", "Shyr", email = "yu.shyr@vumc.org", role = c("aut")),
+             person("Qi", "Liu", email = "qi.liu@vumc.org", role = c("aut", "cre")),
+		     person("Quanhu", "Sheng", email = "quanhu.sheng.1@vumc.org", role = c("aut", "cre"))
+                )
+Description: 
+  Demultiplex
+License: LGPL
+URL: https://github.com/shengqh/scDemultiplex
+Depends: R (>= 3.5), devtools, R.utils, ggplot2
+biocViews:
+VignetteBuilder: knitr
+RoxygenNote: 7.1.0
+Suggests: 
+    rmarkdown
