@@ -9,7 +9,7 @@ scDemultiplex
 
 # Introduction
 
-scDemultiplex is an R package for ...
+scDemultiplex is an R package for demultiplex of the single cell HTO data.
 
 <a name="installation"/>
 
