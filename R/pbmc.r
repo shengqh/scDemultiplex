@@ -30,7 +30,8 @@ obj<-scDemultiplex_by_cutoff(counts, output_prefix, cutoff_startval)
 obj<-scDemultiplex_umap(obj)
 
 p.cut=0.0001
-for (p.cut in c(0.0001, 0.00001, 0.000001)){
+#for (p.cut in c(0.0001, 0.00001, 0.000001)){
+for (p.cut in c(0.00001, 0.000001)){
   obj2<-scDemultiplex_by_refine(obj, p.cut)
   obj2<-scDemultiplex_plot(obj2, paste0(output_prefix, ".p", p.cut))
 }
