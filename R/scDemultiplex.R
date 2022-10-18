@@ -10,7 +10,7 @@ library(edgeR)
 library(dirmult)
 library(MGLM) # ddirmn
 
-scDemultiplex_by_cutoff<-function(counts, output_prefix, cutoff_startval=0){
+scDemultiplex_cutoff<-function(counts, output_prefix, cutoff_startval=0){
   obj<-get_object(counts)
   
   output_file = paste0(output_prefix, ".csv")
@@ -27,10 +27,9 @@ scDemultiplex_by_cutoff<-function(counts, output_prefix, cutoff_startval=0){
     data[,paste0(tagname,"_pos")] = ifelse(data[,tagname]>cutoff, tagname, "Negative")
   }
   
-  
   cat(paste0("get classification ...\n"))
   class_names=paste0(tagnames, "_pos")
-  data$HTO_classification=unlist(apply(data, 1, function(x){
+  data$scDemultiplex_cutoff=unlist(apply(data, 1, function(x){
     xx=unique(x[class_names])
     if (length(xx) > 1){
       xx = xx[xx != "Negative"]
@@ -41,112 +40,67 @@ scDemultiplex_by_cutoff<-function(counts, output_prefix, cutoff_startval=0){
     return(xx)
   }))
   
-  
-  data$HTO_classification.global=unlist(apply(data, 1, function(x){
-    xx=unique(x[class_names])
-    if (length(xx) > 1){
-      xx = xx[xx != "Negative"]
-      if (length(xx) > 1) {
-        return("Doublet")
-      }else{
-        return("Singlet")
-      }
-    }
-    return("Negative")
-  }))
-  
-  
-  obj$HTO_classification = data$HTO_classification
-  obj$HTO_classification2 = factor(obj$HTO_classification, levels=c(tagnames, "Negative", "Doublet"))
-  obj$HTO_classification.global = data$HTO_classification.global
+  obj$scDemultiplex_cutoff = factor(data$scDemultiplex_cutoff, levels=c(tagnames, "Negative", "Doublet"))
+  obj$scDemultiplex_cutoff.global = ifelse(obj$scDemultiplex_cutoff %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex_cutoff), "Singlet")
   return(obj)
 }
 
-scDemultiplex_by_refine<-function(obj, p.cut=0.0001){
+scDemultiplex_by_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff"){
   dd <- obj[["HTO"]]@counts
-  dd <- t(as.matrix(dd)) # 8533   12
+  dd <- t(as.matrix(dd)) # 8193   12
   dd <- as.data.frame(dd)
   
   tag.var <- names(dd)
-  tag.var1 <- c(tag.var, "Negative")
   
+  nn.tag <- length(tag.var)
   dd$total.count <- apply(dd, 1, sum)
-  
-  dd$id <- row.names(dd)
-  
-  # ----
+  NN <- dd$total.count
   
   start_time2 <- Sys.time()
   
-  dd$HTO_classification.tiger <- dd$HTO_classification.r0 <- dd$HTO_classification <- obj$HTO_classification
-  dd$HTO_classification.global.tiger <- dd$HTO_classification.global.r0 <- dd$HTO_classification.global <- obj$HTO_classification.global
-  
-  for(kk in 1:10){
-    print(paste0("iteration ", kk))
-    # start_time1 <- Sys.time()
+  dd$HTO_classification <- unlist(obj[[init_column]])
+
+  kk=1
+  for(kk in 1:iterations){
+    print("refine iteration ", kk)
     
-    out.alpha.est <- matrix(NA, 2, length(tag.var))
-    for(i in 1:length(tag.var)){
-      
-      dds <- subset(dd, HTO_classification == tag.var[i], select = tag.var) # HTO_classification
-      tag.sum <- apply(dds[,tag.var], 2, sum)
-      tag.sum <- c(tag.sum[i], sum(tag.sum[-i])) # make it to k=2
-      p.tu <- goodTuringProportions(tag.sum)
-      dds2 <- data.frame(x1=dds[,tag.var[i]],
-                         x2=apply(dds[,tag.var[-i]], 1, sum))
-      fit <- dirmult(dds2, init = p.tu, epsilon=10^(-4), trace = FALSE)
-      theta.est <- fit$theta
-      alpha.est <- p.tu*(1-theta.est)/theta.est
-      out.alpha.est[, i] <- alpha.est
-      
-      rm(dds); rm(tag.sum); rm(p.tu); rm(fit); rm(theta.est)
-    }
-    rm(i)
+    taglist <- split(dd[tag.var], dd$HTO_classification)
+    taglist <- taglist[! names(taglist) %in% c("Negative","Doublet")]
     
-    # end_time1 <- Sys.time()
-    # time_run1 <- end_time1 - start_time1
-    # time_run1 # 
+    out.alpha.est <- lapply(taglist, function(x){ 
+      p.tu <- goodTuringProportions(colSums(x))
+      theta <- dirmult(x, trace=F)$theta
+      alpha_t <- (1-theta)/theta
+      alpha_est <- alpha_t*p.tu
+      }
+    )
     
     # ----
     
-    # start_time2 <- Sys.time()
-    
-    NN <- dd$total.count
-    nn.tag <- length(tag.var) 
     for(j in 1:nn.tag){
-      
-      alpha.est <- out.alpha.est[,j]
-      uu <- alpha.est[1]
-      vv <- alpha.est[2]
+      alpha.est <- out.alpha.est[[tag.var[j]]]
+      uu <- alpha.est[tag.var[j],]
+      vv <- sum(alpha.est) - alpha.est[tag.var[j],]
       
       var.new <- paste(tag.var[j], ".pbb", sep = "")
       dd[,var.new] <- NA
       dd[,var.new] <- sapply(1:nrow(dd), function(x) pbb(dd[x, tag.var[j]], NN[x], uu, vv))
       dd[,var.new] <- ifelse(dd[,var.new] < 0.5, dd[,var.new], 1 - dd[,var.new])
       
-      var.run <- paste(tag.var[j], ".pbb.r", kk, sep = "")
-      dd[,var.run] <- dd[,var.new] 
-      rm(var.run)
-      
       var.new1 <- paste(var.new, ".ps.pvalue.fdr", sep = "")
       dd[,var.new1] <- p.adjust(dd[,var.new], method = "BH")
-      
-      var.run <- paste(var.new1, ".r", kk, sep = "")
-      dd[,var.run] <- dd[,var.new1]
-      rm(var.run)
       
       rm(var.new); rm(var.new1)
     }
     rm(j)
     
-    # end_time2 <- Sys.time()
-    # time_run2 <- end_time2 - start_time2
-    # time_run2 # 
-    
     # ----
     
     dd$HTO_classification.comb2 <- NA
     dd$HTO_classification.list2 <- NA
+    #p.cut <- 0.025
+    #varp <- paste(tag.var, ".pbb", sep = "")
+    #p.cut <- 0.001
     varp <- paste(tag.var, ".pbb.ps.pvalue.fdr", sep = "")
     
     for(i in 1:nrow(dd)){
@@ -157,82 +111,65 @@ scDemultiplex_by_refine<-function(obj, p.cut=0.0001){
       rm(out); rm(out2)
     }
     rm(i)
-    
+
     dd$HTO_classification.comb2[which(dd$HTO_classification.list2 == 0)] <- "Negative"
-    
-    var.hot <- paste("HTO_classification.comb2.r", kk, sep ="")
-    dd[,var.hot] <- dd$HTO_classification.comb2
-    rm(var.hot)
-    
-    var.hot <- paste("HTO_classification.list2.r", kk, sep ="")
-    dd[,var.hot] <- dd$HTO_classification.list2
-    rm(var.hot)
     
     # ----
     
     for(i in 1:length(tag.var)){
       dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
-                                    dd$HTO_classification %in% c("Negative", "Doublet") &
-                                    dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
+                                  dd$HTO_classification %in% c("Negative", "Doublet") &
+                                  dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
     }
     rm(i)
-    
-    
-    var.hot <- paste("HTO_classification.r", kk, sep ="")
-    dd[,var.hot] <- dd$HTO_classification
-    rm(var.hot)
     
   }
   rm(kk)
   
-  
-  dd$classification.diff <- ifelse(dd$HTO_classification == dd$HTO_classification.tiger, 0, 1)
-  
-  dd$HTO_classification3 <- as.character(dd$HTO_classification)
-  dd$HTO_classification3[which(dd$HTO_classification.tiger == "Doublet" & dd$classification.diff == 1)] <- "Doublet to Singlet"
-  dd$HTO_classification3[which(dd$HTO_classification.tiger == "Negative" & dd$classification.diff == 1)] <- "Negative to Singlet"
-  
-  dd$HTO_classification3 <- factor(dd$HTO_classification3,
-                                   levels = c(tag.var1, "Doublet", "Doublet to Singlet", "Negative to Singlet"))
-  obj$HTO_classification3 <- dd$HTO_classification3
-  
   end_time2 <- Sys.time()
   time_run2 <- end_time2 - start_time2
-  time_run2 # Time difference of 10.02387 mins
+  time_run2 # Time difference of 23.76274 mins
   
+  # ----
+  
+  obj$scDemultiplex_refine = factor(dd$HTO_classification, levels=c(tag.var, "Negative", "Doublet"))
+  obj$scDemultiplex_refine.global = ifelse(obj$scDemultiplex_refine %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex_refine), "Singlet")
+  
+
   return(obj)
 }
 
 scDemultiplex_umap<-function(obj){
   tagnames<-rownames(obj)
-  VariableFeatures(obj) <- tagnames
-  obj <- ScaleData(obj)
-  obj <- RunUMAP(obj, features=tagnames, slot="scale.data")
+  DefaultAssay(obj)<-"HTO"
+  obj <- ScaleData(obj, features=tagnames)
+  obj <- RunPCA(obj, features=tagnames, approx = FALSE)
+  obj <- RunUMAP(obj, reduction = "pca", dims = 1:length(tagnames))
   return(obj)
 }
 
-scDemultiplex_plot<-function(obj, output_prefix){
+scDemultiplex_plot<-function(obj, output_prefix, group.by){
   tagnames<-rownames(obj)
 
-  g<-DimPlot(obj, reduction = "umap", group.by = "HTO_classification2")
+  g<-DimPlot(obj, reduction = "umap", group.by = group.by)
   png(paste0(output_prefix, ".umap.class.png"), width=2000, height=1800, res=300)
   print(g)
   dev.off()
   
   width=max(1600, length(tagnames) * 1000)
   
-  Idents(obj) <- "HTO_classification2"
+  Idents(obj) <- group.by
   png(paste0(output_prefix, ".class.ridge.png"), width=width, height=max(1400, length(tagnames) * 300), res=300)
   print(RidgePlot(obj, assay = "HTO", features = tagnames, ncol = length(tagnames)))
   dev.off()
   
   png(paste0(output_prefix, ".class.dist.png"), width=width, height=max(1400, length(tagnames) * 500), res=300)
-  rplot(obj, assay = "HTO", features = tagnames, identName="HTO_classification2")
+  rplot(obj, assay = "HTO", features = tagnames, identName=group.by)
   dev.off()
   
   if (length(tagnames) == 2) {
     png(paste0(output_prefix, ".class.point.png"), width=2000, height=1800, res=300)
-    print(FeatureScatter(object = obj, feature1 = tagnames[1], feature2 = tagnames[2],group.by="HTO_classification2"))
+    print(FeatureScatter(object = obj, feature1 = tagnames[1], feature2 = tagnames[2],group.by=group.by))
     dev.off()
   }
   
@@ -242,20 +179,20 @@ scDemultiplex_plot<-function(obj, output_prefix){
   g<-FeaturePlot(obj, features=tagnames, reduction = "umap")
   print(g)
   dev.off()
-  
-  hto_names <- c(tagnames, "Singlet", "Doublet", "Doublet to Singlet", "Negative to Singlet")
-  cols=rep("gray", length(hto_names))
-  names(cols)=hto_names
-  cols[['Negative']]="blue"
-  cols[["Doublet"]]="red"
-  cols[["Doublet to Singlet"]]="green"
-  cols[["Negative to Singlet"]]="gold"
-  
-  png(paste0(output_prefix, ".umap.all.png"), width=2000, height=1800, res=300)
-  g<-DimPlot(obj, reduction = "umap", label=T, group.by="HTO_classification3", order=c("Negative", "Doublet", "Doublet to Singlet", "Negative to Singlet"))+
-    scale_color_manual(values=cols)
-  print(g)
-  dev.off()
+# 
+#   hto_names <- c(tagnames, "Singlet", "Doublet", "Doublet to Singlet", "Negative to Singlet")
+#   cols=rep("gray", length(hto_names))
+#   names(cols)=hto_names
+#   cols[['Negative']]="blue"
+#   cols[["Doublet"]]="red"
+#   cols[["Doublet to Singlet"]]="green"
+#   cols[["Negative to Singlet"]]="gold"
+#   
+#   png(paste0(output_prefix, ".umap.all.png"), width=2000, height=1800, res=300)
+#   g<-DimPlot(obj, reduction = "umap", label=T, group.by="HTO_classification3", order=c("Negative", "Doublet", "Doublet to Singlet", "Negative to Singlet"))+
+#     scale_color_manual(values=cols)
+#   print(g)
+#   dev.off()
   
   return(obj)
 }
