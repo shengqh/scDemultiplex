@@ -10,7 +10,7 @@ library(edgeR)
 library(dirmult)
 library(MGLM) # ddirmn
 
-scDemultiplex_cutoff<-function(counts, output_prefix, cutoff_startval=0){
+demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0){
   obj<-get_object(counts)
   
   output_file = paste0(output_prefix, ".csv")
@@ -45,7 +45,7 @@ scDemultiplex_cutoff<-function(counts, output_prefix, cutoff_startval=0){
   return(obj)
 }
 
-scDemultiplex_by_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff"){
+demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff"){
   dd <- obj[["HTO"]]@counts
   dd <- t(as.matrix(dd)) # 8193   12
   dd <- as.data.frame(dd)
@@ -62,7 +62,7 @@ scDemultiplex_by_refine<-function(obj, p.cut=0.001, iterations=10, init_column="
 
   kk=1
   for(kk in 1:iterations){
-    print("refine iteration ", kk)
+    print(paste0("refine iteration ", kk))
     
     taglist <- split(dd[tag.var], dd$HTO_classification)
     taglist <- taglist[! names(taglist) %in% c("Negative","Doublet")]
@@ -139,7 +139,7 @@ scDemultiplex_by_refine<-function(obj, p.cut=0.001, iterations=10, init_column="
   return(obj)
 }
 
-scDemultiplex_umap<-function(obj){
+hto_umap<-function(obj){
   tagnames<-rownames(obj)
   DefaultAssay(obj)<-"HTO"
   obj <- ScaleData(obj, features=tagnames)
@@ -148,7 +148,7 @@ scDemultiplex_umap<-function(obj){
   return(obj)
 }
 
-scDemultiplex_plot<-function(obj, output_prefix, group.by){
+hto_plot<-function(obj, output_prefix, group.by){
   tagnames<-rownames(obj)
 
   g<-DimPlot(obj, reduction = "umap", group.by = group.by)
@@ -195,4 +195,30 @@ scDemultiplex_plot<-function(obj, output_prefix, group.by){
 #   dev.off()
   
   return(obj)
+}
+
+hto_findFoldChange<-function(obj, col) {
+  Idents(obj)<-col
+  markers<-FindAllMarkers(obj, pseudocount.use = FALSE,only.pos = TRUE)
+  markers<-markers[!(markers$cluster %in% c("Negative", "Doublet")),]
+  markers<-markers[order(markers$gene),c("gene", "avg_log2FC"), drop=F]
+  rownames(markers)<-markers$gene
+  markers<-markers[,"avg_log2FC", drop=F]
+  colnames(markers)=col
+  return(markers)
+}
+
+hto_findMultiFoldChanges<-function(obj, cols) {
+  alltb<-NULL
+
+  for (col in cols){
+    markers<-scDemultiplex_findFoldChange(obj, col)
+    if(is.null(alltb)){
+      alltb<-markers
+    }else{
+      alltb<-cbind(alltb, markers)
+    }
+  }
+  
+  return(alltb)
 }
