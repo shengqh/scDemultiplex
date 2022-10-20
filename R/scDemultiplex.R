@@ -10,6 +10,7 @@ library(edgeR)
 library(dirmult)
 library(MGLM) # ddirmn
 
+#' @export
 demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0){
   obj<-get_object(counts)
   
@@ -45,6 +46,7 @@ demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0){
   return(obj)
 }
 
+#' @export
 demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff"){
   dd <- obj[["HTO"]]@counts
   dd <- t(as.matrix(dd)) # 8193   12
@@ -139,6 +141,7 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
   return(obj)
 }
 
+#' @export
 hto_umap<-function(obj){
   tagnames<-rownames(obj)
   DefaultAssay(obj)<-"HTO"
@@ -148,6 +151,7 @@ hto_umap<-function(obj){
   return(obj)
 }
 
+#' @export
 hto_plot<-function(obj, output_prefix, group.by){
   tagnames<-rownames(obj)
 
@@ -179,6 +183,18 @@ hto_plot<-function(obj, output_prefix, group.by){
   g<-FeaturePlot(obj, features=tagnames, reduction = "umap")
   print(g)
   dev.off()
+  
+  cols=rep("gray", length(tagnames))
+  names(cols)=tagnames
+  cols[['Negative']]="blue"
+  cols[["Doublet"]]="red"
+  
+  png(paste0(output_prefix, ".umap.nd.png"), width=2000, height=1800, res=300)
+  g<-DimPlot(obj, reduction = "umap", label=T, group.by=group.by, order=c("Negative", "Doublet"))+
+    scale_color_manual(values=cols)
+  print(g)
+  dev.off()
+  
 # 
 #   hto_names <- c(tagnames, "Singlet", "Doublet", "Doublet to Singlet", "Negative to Singlet")
 #   cols=rep("gray", length(hto_names))
@@ -197,6 +213,7 @@ hto_plot<-function(obj, output_prefix, group.by){
   return(obj)
 }
 
+#' @export
 hto_findFoldChange<-function(obj, col) {
   Idents(obj)<-col
   markers<-FindAllMarkers(obj, pseudocount.use = FALSE,only.pos = TRUE)
@@ -208,6 +225,7 @@ hto_findFoldChange<-function(obj, col) {
   return(markers)
 }
 
+#' @export
 hto_findMultiFoldChanges<-function(obj, cols) {
   alltb<-NULL
 
