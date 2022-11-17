@@ -12,10 +12,15 @@ library(MGLM) # ddirmn
 
 #' @export
 demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0){
-  obj<-get_object(counts)
+  if(is(counts,"Seurat")){
+    obj=counts
+  }else{
+    obj<-get_object(counts)
+  }
   
   output_file = paste0(output_prefix, ".csv")
   tagnames = rownames(obj[["HTO"]])
+  tagnames = tagnames[order(tagnames)]
   
   data <- FetchData(object=obj, vars=tagnames)
   
