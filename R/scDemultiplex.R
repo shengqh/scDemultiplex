@@ -139,8 +139,8 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
   
   # ----
   
-  obj$scDemultiplex_refine = factor(dd$HTO_classification, levels=c(tag.var, "Negative", "Doublet"))
-  obj$scDemultiplex_refine.global = ifelse(obj$scDemultiplex_refine %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex_refine), "Singlet")
+  obj$scDemultiplex = factor(dd$HTO_classification, levels=c(tag.var, "Negative", "Doublet"))
+  obj$scDemultiplex.global = ifelse(obj$scDemultiplex %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex), "Singlet")
   
 
   return(obj)

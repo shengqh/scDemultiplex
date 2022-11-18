@@ -5,6 +5,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
   rmdformats::readthedown:
     toc_depth: 3
+    code_folding: hide
 ---
 
 ```{r global options, include = FALSE}
@@ -34,19 +35,19 @@ theme_bw3 <- function () {
 	)
 }
 
-source("C:/Users/sheng/Programs/projects/papers/20210703_scrna_hto/split_samples_utils_lch.r")
+root_dir="C:/projects/scratch/cqs/shengq2/papers/20221116_scrna_hto/"
 ```
 
 ```{r}
 prepare_data<-function(name){
-  rds_file=paste0("C:/projects/scratch/cqs/shengq2/papers/20221116_scrna_hto/", name, "/", name, ".results_obj.rds")
+  rds_file=paste0(root_dir, name, "/", name, ".results_obj.rds")
 
   htos<-readRDS(rds_file)
 
   glist<-list()
   meta<-htos@meta.data
 
-  htocols<-c("scDemultiplex_cutoff", "scDemultiplex_refine", "Seurat_HTODemux", "Seurat_MULTIseqDemux", "GMM_demux")
+  htocols<-c("scDemultiplex", "HTODemux", "MULTIseqDemux", "GMM_demux")
   col=htocols[1]
   for(col in htocols){
     newcol.global.name<-paste0(col, ".global")
@@ -59,41 +60,52 @@ prepare_data<-function(name){
     celllist<-list()
     celllist$Negative<-colnames(htos)[newcol.global == "Negative"]
     celllist$Doublet<-colnames(htos)[newcol.global == "Doublet"]
-    cellcolors<-list()
-    cellcolors$Negative<-"Blue"
-    cellcolors$Doublet<-"Red"
-  
-    glist[[newcol.global.name]] = DimPlot(htos, reduction="umap", cells.highlight = celllist, cols.highlight = cellcolors, group.by=newcol.global.name) + ggtitle(col)   
+
+    glist[[newcol.global.name]] = DimPlot(htos, reduction="umap", cells.highlight = celllist, group.by=newcol.global.name) + ggtitle(col) + scale_color_manual(labels=c('Singlet', 'Negative', 'Doublet'), values =c("gray", "blue", "red"))
+
+    celllist<-list()
+    celllist$Singlet<-colnames(htos)[newcol.global == "Singlet"]
+
+    glist[[paste0(newcol.global.name, "_singlet")]] = DimPlot(htos, reduction="umap", cells.highlight = celllist, group.by=newcol.global.name) + ggtitle(col) + scale_color_manual(labels=c('Other', 'Singlet'), values =c("gray", "blue"))
   }
   
-  g<-wrap_plots(glist, ncol=2)
+  g<-wrap_plots(glist, ncol=3)
   return(list(htos=htos, htocols=htocols, g=g))
 }
 ```
 
 ```{r}
-
 process_data<-function(name){
-  cat("#", name, "\n\n")
+  cat("##", name, "\n\n")
   hto_list<-prepare_data(name)
   obj<-hto_list$htos
   meta<-obj@meta.data
   meta$log_nCount_HTO<-log2(meta$nCount_HTO + 1)
 
-  cat("## Four HTO classifications\n\n")
-  print(hto_list$g)
+  cat("### Four HTO demultiplex methods\n\n")
   
   alltb<-NULL
   for (col in hto_list$htocols){
     coltb<-table(meta[,col])
-    alltb<-rbind(alltb, coltb)  
+    if(is.null(alltb)){
+      alltb<-rbind(alltb, coltb)
+    }else{
+      coltb<-coltb[colnames(alltb)]
+      alltb<-rbind(alltb, coltb)
+    }
   }
   rownames(alltb)<-hto_list$htocols
   tbl<-alltb %>%
     kbl() %>%
     kable_paper("hover", full_width = T)  
   print(tbl)
+  write.csv(alltb, paste0(name, ".cell.csv"))
   
+  png(paste0(name, ".demulti.png"), width=4000, height=5000, res=300)
+  print(hto_list$g)
+  dev.off()
+  print(hto_list$g)
+
   cat("### DE analysis\n\n")
   alltb<-NULL
   col<-hto_list$htocols[2]
@@ -118,73 +130,16 @@ process_data<-function(name){
     kbl() %>%
     kable_paper("hover", full_width = T)  
   print(tbl)
+  write.csv(alltb, paste0(name, ".de.csv"))
   
-
-  cat("### log_nCount_HTO \n\n")
-  hto="Negative"
-  for (hto in c("Negative", "Doublet")){
-    cat("\n\n#### ", hto, "\n\n")
-    alltf<-NULL
-    col = hto_list$htocols[1]
-    for (col in hto_list$htocols){
-      tt<-meta[meta[,col] == hto, "log_nCount_HTO", drop=F]
-      tt$method = col
-      alltf<-rbind(alltf, tt)
-    }  
-    alltf$method<-factor(alltf$method, levels=hto_list$htocols)
-    g<-ggplot(alltf, aes_string("method", "log_nCount_HTO")) + geom_violin() + geom_boxplot(width=0.2, outlier.shape = NA) + theme_bw3() + xlab("") + ylab("log(nCount_HTO)") + ggtitle(hto)
-    print(g)
-  }  
-  
-  cat("\n\n### refinement vs cutoff\n\n")
-  t1<-"scDemultiplex_cutoff"
-  t2<-"scDemultiplex_refine"
-  
-  cat("\n\n#### Negative\n\n")
-  wt<-wilcox.test(meta$nCount_HTO[meta[,t1] == "Negative"], meta$nCount_HTO[meta[,t2] == "Negative"])
-  cat("Wilcox test pvalue=", wt$p.value, "\n\n")
-
-  cat("\n\n#### Changed cells from Negative\n\n")  
-  tt<-meta[meta[,t1] == "Negative",]
-  g<-ggplot(tt, aes_string(t2, "log_nCount_HTO")) + geom_violin() + geom_boxplot(width=0.2, outlier.shape = NA) + geom_jitter(width = 0.2) + theme_bw3()
-  print(g)
-
-  cat("\n\n#### Doublet\n\n")
-  wt<-wilcox.test(meta$nCount_HTO[meta[,t1] == "Doublet"], meta$nCount_HTO[meta[,t2] == "Doublet"])
-  cat("Wilcox test pvalue=", wt$p.value, "\n\n")
-
-  cat("\n\n#### Changed cells from Doublet\n\n")  
-
-  tt<-meta[meta[,t1] == "Doublet",]
-  g<-ggplot(tt, aes_string(t2, "log_nCount_HTO")) + geom_violin() + geom_boxplot(width=0.2, outlier.shape = NA) + geom_jitter(width = 0.2) + theme_bw3()
-  print(g)
-  
-  if(name == "hto12_old"){
-    hto12_combined_obj_rds<-r"(C:\projects\data\cqs\seurat_data\hto12_combined_obj.rds)"
-    if(file.exists(hto12_combined_obj_rds)){
-      obj<-readRDS(hto12_combined_obj_rds)
-    }else{
-      umi = readRDS(r"(C:\projects\data\cqs\seurat_data\hto12_umi_mtx.rds)")
-      umi<-umi[, colnames(obj)]
-      obj[["RNA"]] <- CreateAssayObject(counts = umi)
-      DefaultAssay(obj)<-"RNA"
-      # Normalize RNA data with log normalization
-      obj <- NormalizeData(obj)
-      # Find and scale variable features
-      obj <- FindVariableFeatures(obj, selection.method = "mean.var.plot")
-      features = VariableFeatures(obj)
-      obj <- ScaleData(obj, features = features)    
-      obj <- RunPCA(obj, features = features)
-      obj <- RunUMAP(obj, reduction = "pca", dims=1:20)
-      obj <- FindNeighbors(obj, reduction = "pca")
-      obj <- FindClusters(obj, reduction = "pca") 
-      saveRDS(obj, hto12_combined_obj_rds)
-    }
-    
+  if(name == "hto12"){
+    hto12_combined_obj_rds<-paste0(root_dir, "/hto12/hto12.combined.rds")
+    expobj<-readRDS(hto12_combined_obj_rds)
+    expobj<-expobj[,colnames(obj)]
     ari_list=list()
     col=hto_list$htocols[1]
     for(col in hto_list$htocols){
-      ari=adjustedRandIndex(obj$seurat_clusters, unlist(FetchData(obj, col)))
+      ari=adjustedRandIndex(expobj$seurat_clusters, unlist(FetchData(obj, col)))
       ari_list[[col]] = ari
     }
     ari_df<-t(data.frame(ari_list))
@@ -194,6 +149,7 @@ process_data<-function(name){
       kbl() %>%
       kable_paper("hover", full_width = T)  
     print(tbl)
+    write.csv(ari_df, paste0(name, ".ari.csv"))
 
     glist=list()
     newcols=c()
@@ -208,11 +164,12 @@ process_data<-function(name){
     
     ct=cts[1]
     for(ct in cts){
-      for(newcol in newcols){
+      for(col in hto_list$htocols){
+        newcol = paste0(col, "_celltype")
         newcolvalue = unlist(FetchData(obj, newcol))
         cells<-colnames(obj)[newcolvalue == ct]
-        gname = paste0(newcol, ":", ct)
-        g<-DimPlot(obj, reduction = "umap", cells.highlight = cells, cols.highlight = "red") + ggtitle(gname)
+        gname = paste0(col, ":", ct)
+        g<-DimPlot(obj, reduction = "umap", cells.highlight = cells, cols.highlight = "red") + ggtitle(gname) + NoLegend()
         glist[[gname]] = g
       }
     }
@@ -225,14 +182,15 @@ process_data<-function(name){
 }
 ```
 
-```{r results="asis", fig.height=15, fig.width=15}
+```{r results="asis", fig.height=20, fig.width=15}
 gg<-process_data("hto12")
 ```
 
 ```{r results="asis", fig.height=28, fig.width=16}
-#print(gg)
+print(gg)
+saveRDS(gg, "hto12.gg.rds")
 ```
 
-```{r results="asis", fig.height=15, fig.width=15}
+```{r results="asis", fig.height=20, fig.width=15}
 process_data("pbmc")
 ```

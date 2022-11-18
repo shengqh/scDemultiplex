@@ -21,19 +21,21 @@ for(sample in c("hto12", "pbmc")){
     dir.create(result_folder)
   }
   setwd(result_folder)
+
+  final_file=paste0(sample, ".scDemultiplex.rds")
   
   output_prefix<-paste0(sample, ".HTO")
-  
+
   tic(paste0("starting ", sample, "...\n"))
   obj<-demulti_cutoff(obj, output_prefix, 0)
   toc1=toc()
   obj<-demulti_refine(obj, p.cut)
   toc2=toc()
-  
+
   saveRDS(list("cutoff"=toc1, "refine"=toc2), paste0(sample, ".scDemultiplex.tictoc.rds"))
-  
+
   obj<-hto_plot(obj, paste0(output_prefix, ".cutoff"), group.by="scDemultiplex_cutoff")
-  obj<-hto_plot(obj, paste0(output_prefix, ".refine_p", p.cut), group.by="scDemultiplex_refine")
-  
-  saveRDS(obj, paste0(sample, ".scDemultiplex.rds"))
+  obj<-hto_plot(obj, paste0(output_prefix, ".refine_p", p.cut), group.by="scDemultiplex")
+
+  saveRDS(obj, final_file)
 }

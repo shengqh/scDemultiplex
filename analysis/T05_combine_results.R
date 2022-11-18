@@ -9,9 +9,9 @@ for(sample in c("hto12", "pbmc")) {
   obj1<-readRDS(paste0("scDemultiplex/", sample, ".scDemultiplex.rds"))
   obj1.meta<-obj1@meta.data
   
-  obj2.meta<-readRDS(paste0("Seurat_HTODemux/", sample, ".Seurat_HTODemux.rds"))@meta.data
+  obj2.meta<-readRDS(paste0("HTODemux/", sample, ".HTODemux.rds"))@meta.data
   
-  obj3.meta<-readRDS(paste0("Seurat_MULTIseqDemux/", sample, ".Seurat_MULTIseqDemux.rds"))@meta.data
+  obj3.meta<-readRDS(paste0("MULTIseqDemux/", sample, ".MULTIseqDemux.rds"))@meta.data
   
   dd3 <- read.csv("GMM-demux/GMM_full.csv")
   dd3c <- read.csv("GMM-demux/GMM_full.config")
@@ -27,8 +27,8 @@ for(sample in c("hto12", "pbmc")) {
   obj3.meta<-obj3.meta[rownames(obj1.meta),]
   gmm<-gmm[rownames(obj1.meta),]
   
-  obj1.meta$Seurat_HTODemux = obj2.meta$Seurat_HTODemux
-  obj1.meta$Seurat_MULTIseqDemux = obj3.meta$Seurat_MULTIseqDemux
+  obj1.meta$HTODemux = obj2.meta$HTODemux
+  obj1.meta$MULTIseqDemux = obj3.meta$MULTIseqDemux
   obj1.meta$GMM_demux = gmm$GMM_demux
   
   write.csv(obj1.meta, file = paste0(sample, ".results.csv"), row.names = T)

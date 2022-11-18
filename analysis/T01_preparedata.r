@@ -48,6 +48,21 @@ for(sample in c("hto12", "pbmc")){
   hto.exp <- CreateSeuratObject(counts = exp, min.features = 200)
   cells.valid<-colnames(hto.exp)
   hto<-hto[!(rownames(hto) %in% ignored_tags), cells.valid]
+  
+  DefaultAssay(hto.exp)<-"RNA"
+  # Normalize RNA data with log normalization
+  hto.exp <- NormalizeData(hto.exp)
+  # Find and scale variable features
+  hto.exp <- FindVariableFeatures(hto.exp, selection.method = "mean.var.plot")
+  features = VariableFeatures(hto.exp)
+  hto.exp <- ScaleData(hto.exp, features = features)    
+  hto.exp <- RunPCA(hto.exp, features = features)
+  hto.exp <- RunUMAP(hto.exp, reduction = "pca", dims=1:20)
+  hto.exp <- FindNeighbors(hto.exp, reduction = "pca")
+  hto.exp <- FindClusters(hto.exp, reduction = "pca") 
+  
+  hto.exp[["HTO"]] <- CreateAssayObject(counts = hto)
+  saveRDS(hto.exp, paste0(sample, ".combined.rds"))
 
   counts=as.sparse(hto)
   
