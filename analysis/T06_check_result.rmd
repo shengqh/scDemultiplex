@@ -62,27 +62,22 @@ prepare_data<-function(name){
     celllist$Doublet<-colnames(htos)[newcol.global == "Doublet"]
 
     glist[[newcol.global.name]] = DimPlot(htos, reduction="umap", cells.highlight = celllist, group.by=newcol.global.name) + ggtitle(col) + scale_color_manual(labels=c('Singlet', 'Negative', 'Doublet'), values =c("gray", "blue", "red"))
-
-    celllist<-list()
-    celllist$Singlet<-colnames(htos)[newcol.global == "Singlet"]
-
-    glist[[paste0(newcol.global.name, "_singlet")]] = DimPlot(htos, reduction="umap", cells.highlight = celllist, group.by=newcol.global.name) + ggtitle(col) + scale_color_manual(labels=c('Other', 'Singlet'), values =c("gray", "blue"))
   }
   
-  g<-wrap_plots(glist, ncol=3)
+  g<-wrap_plots(glist, ncol=2)
   return(list(htos=htos, htocols=htocols, g=g))
 }
 ```
 
 ```{r}
 process_data<-function(name){
-  cat("##", name, "\n\n")
+  cat("\n\n##", name, "\n\n")
   hto_list<-prepare_data(name)
   obj<-hto_list$htos
   meta<-obj@meta.data
   meta$log_nCount_HTO<-log2(meta$nCount_HTO + 1)
 
-  cat("### Four HTO demultiplex methods\n\n")
+  cat("\n\n### Four HTO demultiplex methods\n\n")
   
   alltb<-NULL
   for (col in hto_list$htocols){
@@ -101,12 +96,12 @@ process_data<-function(name){
   print(tbl)
   write.csv(alltb, paste0(name, ".cell.csv"))
   
-  png(paste0(name, ".demulti.png"), width=4000, height=5000, res=300)
+  png(paste0(name, ".demulti.png"), width=3000, height=5000, res=300)
   print(hto_list$g)
   dev.off()
   print(hto_list$g)
 
-  cat("### DE analysis\n\n")
+  cat("\n\n### DE analysis\n\n")
   alltb<-NULL
   col<-hto_list$htocols[2]
   for (col in hto_list$htocols){
@@ -188,6 +183,9 @@ gg<-process_data("hto12")
 
 ```{r results="asis", fig.height=28, fig.width=16}
 print(gg)
+png("hto12.gg.rds", width=6000, height=10000, res=300)
+print(gg)
+dev.off()
 saveRDS(gg, "hto12.gg.rds")
 ```
 
