@@ -13,7 +13,7 @@ Description:
   Demultiplex: R package for demultiplex of the single cell HTO data.
 License: LGPL
 URL: https://github.com/shengqh/scDemultiplex
-Depends: R (>= 3.5), devtools, R.utils, ggplot2, Seurat, choisycutoff, dirmult, MGLM, zoo, gridExtra, edgeR, TailRank, reshape2
+Depends: R (>= 3.5), R.utils, ggplot2, Seurat, dirmult, MGLM, zoo, gridExtra, edgeR, TailRank, reshape2
 biocViews:
 VignetteBuilder: knitr
 RoxygenNote: 7.2.1
