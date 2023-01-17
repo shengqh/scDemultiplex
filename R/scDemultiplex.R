@@ -1,6 +1,5 @@
 library(Seurat)
 library(ggplot2)
-library(choisycutoff)
 library(zoo)
 library(reshape2)
 library(gridExtra)
@@ -9,27 +8,54 @@ library(TailRank) # dbb # Beta-Binomial Distribution
 library(edgeR)
 library(dirmult)
 library(MGLM) # ddirmn
+library(parallel)
+library(tictoc)
+
+check_mc_cores<-function(mc.cores) {  
+  if(.Platform$OS.type == "windows") {
+    mc.cores=1
+  }else{
+    mc.cores=max(1, mc.cores)
+  }
+  return(mc.cores)
+}
+
+do_cutoff<-function(tagname, data, output_prefix, cutoff_startval){
+  values=data[,tagname]
+  values=values[values>0] # remove count = 0
+  cat(paste0("get cutoff of ", tagname, " ...\n"))
+  cutoff=get_cutoff(values, paste0(output_prefix, "_", tagname), cutoff_startval)
+  return(cutoff)
+}
 
 #' @export
-demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0){
+demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0, mc.cores=1){
+  if(!require("choisycutoff")){
+    BiocManager::install('shengqh/cutoff')
+    library(choisycutoff)
+  }
+
   if(is(counts,"Seurat")){
     obj=counts
   }else{
     obj<-get_object(counts)
   }
   
+  mc.cores<-check_mc_cores(mc.cores)
+
   output_file = paste0(output_prefix, ".csv")
   tagnames = rownames(obj[["HTO"]])
   tagnames = tagnames[order(tagnames)]
   
   data <- FetchData(object=obj, vars=tagnames)
   
+  cutoff_list<-unlist(mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
+  names(cutoff_list) = tagnames
+  print(cutoff_list)
+
   tagname=tagnames[1]  
   for (tagname in tagnames) {
-    values=data[,tagname]
-    values=values[values>0] # remove count = 0
-    cat(paste0("get cutoff of ", tagname, " ...\n"))
-    cutoff=get_cutoff(values, paste0(output_prefix, "_", tagname), cutoff_startval)
+    cutoff = cutoff_list[tagname]
     data[,paste0(tagname,"_pos")] = ifelse(data[,tagname]>cutoff, tagname, "Negative")
   }
   
@@ -50,9 +76,21 @@ demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0){
   obj$scDemultiplex_cutoff.global = ifelse(obj$scDemultiplex_cutoff %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex_cutoff), "Singlet")
   return(obj)
 }
+  
+estimate_alpha<-function(name, taglist){
+  x <-taglist[[name]]
+  p.tu <- goodTuringProportions(colSums(x))
+  print(paste0("    dirmult ", name, " ..."))
+  theta <- dirmult(x, trace=F)$theta
+  alpha_t <- (1-theta)/theta
+  alpha_est <- alpha_t*p.tu
+  return(alpha_est)
+}
 
 #' @export
-demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff"){
+demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1){
+  mc.cores<-check_mc_cores(mc.cores)
+
   dd <- obj[["HTO"]]@counts
   dd <- t(as.matrix(dd)) # 8193   12
   dd <- as.data.frame(dd)
@@ -66,7 +104,10 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
   start_time2 <- Sys.time()
   
   dd$HTO_classification <- unlist(obj[[init_column]])
-
+  
+  #cl <- makeCluster(nn.tag)  
+  #registerDoParallel(cl) 
+  
   kk=1
   for(kk in 1:iterations){
     print(paste0("refine iteration ", kk))
@@ -74,16 +115,14 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
     taglist <- split(dd[tag.var], dd$HTO_classification)
     taglist <- taglist[! names(taglist) %in% c("Negative","Doublet")]
     
-    out.alpha.est <- lapply(taglist, function(x){ 
-      p.tu <- goodTuringProportions(colSums(x))
-      theta <- dirmult(x, trace=F)$theta
-      alpha_t <- (1-theta)/theta
-      alpha_est <- alpha_t*p.tu
-      }
-    )
+    print("  estimate alpha ...")
+    tic()
+    out.alpha.est <- mclapply(names(taglist), estimate_alpha, taglist=taglist, mc.cores=mc.cores)
+    toc()
+    names(out.alpha.est)<-names(taglist)
     
     # ----
-    
+    print("  calculate pvalue ...")
     for(j in 1:nn.tag){
       alpha.est <- out.alpha.est[[tag.var[j]]]
       uu <- alpha.est[tag.var[j],]
@@ -103,6 +142,7 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
     
     # ----
     
+    print("  assign category ...")
     dd$HTO_classification.comb2 <- NA
     dd$HTO_classification.list2 <- NA
     #p.cut <- 0.025
@@ -118,15 +158,15 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
       rm(out); rm(out2)
     }
     rm(i)
-
+    
     dd$HTO_classification.comb2[which(dd$HTO_classification.list2 == 0)] <- "Negative"
     
     # ----
     
     for(i in 1:length(tag.var)){
       dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
-                                  dd$HTO_classification %in% c("Negative", "Doublet") &
-                                  dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
+                                    dd$HTO_classification %in% c("Negative", "Doublet") &
+                                    dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
     }
     rm(i)
     
@@ -142,7 +182,6 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
   obj$scDemultiplex = factor(dd$HTO_classification, levels=c(tag.var, "Negative", "Doublet"))
   obj$scDemultiplex.global = ifelse(obj$scDemultiplex %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex), "Singlet")
   
-
   return(obj)
 }
 
