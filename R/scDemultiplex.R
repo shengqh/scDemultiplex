@@ -49,7 +49,7 @@ demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0, mc.cores=1){
   
   data <- FetchData(object=obj, vars=tagnames)
   
-  cutoff_list<-unlist(mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
+  cutoff_list<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
   names(cutoff_list) = tagnames
   print(cutoff_list)
 
@@ -117,7 +117,7 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
     
     print("  estimate alpha ...")
     tic()
-    out.alpha.est <- mclapply(names(taglist), estimate_alpha, taglist=taglist, mc.cores=mc.cores)
+    out.alpha.est <- parallel::mclapply(names(taglist), estimate_alpha, taglist=taglist, mc.cores=mc.cores)
     toc()
     names(out.alpha.est)<-names(taglist)
     
