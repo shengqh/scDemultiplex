@@ -8,13 +8,13 @@ Authors@R: c(person("Li-ching", "Huang", email = "li-ching.huang.1@vumc.org", ro
              person("Stolze", "Joey", email = "lk.stolze@vumc.org", role = c("aut")),
              person("Yu", "Shyr", email = "yu.shyr@vumc.org", role = c("aut")),
              person("Qi", "Liu", email = "qi.liu@vumc.org", role = c("aut")),
-		         person("Quanhu", "Sheng", email = "quanhu.sheng.1@vumc.org", role = c("aut", "cre"))
+		     person("Quanhu", "Sheng", email = "quanhu.sheng.1@vumc.org", role = c("aut", "cre"))
             )
 Description: 
   Demultiplex: R package for demultiplex of the single cell HTO data.
 License: LGPL
 URL: https://github.com/shengqh/scDemultiplex
-Depends: R (>= 3.5), R.utils, ggplot2, Seurat, dirmult, MGLM, zoo, gridExtra, edgeR, TailRank, reshape2, parallel, tictoc
+Depends: R (>= 3.5), R.utils, ggplot2, Seurat, dirmult, MGLM, zoo, gridExtra, edgeR, TailRank, reshape2, tictoc
 biocViews:
 VignetteBuilder: knitr
 RoxygenNote: 7.2.1
