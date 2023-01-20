@@ -15,7 +15,7 @@ check_mc_cores<-function(mc.cores) {
   if(.Platform$OS.type == "windows") {
     mc.cores=1
   }else{
-    mc.cores=max(1, mc.cores)
+    mc.cores=min(parallel::detectCores() - 1, max(1, mc.cores))
   }
   return(mc.cores)
 }
@@ -77,6 +77,7 @@ demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0, mc.cores=1){
   return(obj)
 }
   
+#Dirichlet-Multinomial Distribution
 estimate_alpha<-function(name, taglist){
   x <-taglist[[name]]
   p.tu <- goodTuringProportions(colSums(x))
