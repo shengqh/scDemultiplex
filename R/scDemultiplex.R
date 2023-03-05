@@ -89,7 +89,7 @@ estimate_alpha<-function(name, taglist){
 }
 
 #' @export
-demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1){
+demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=TRUE){
   mc.cores<-check_mc_cores(mc.cores)
 
   dd <- obj[["HTO"]]@counts
@@ -165,9 +165,14 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
     # ----
     
     for(i in 1:length(tag.var)){
-      dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
+      if(refine_negative_doublet_only){
+        dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
                                     dd$HTO_classification %in% c("Negative", "Doublet") &
                                     dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
+      }else{
+        dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
+                                    dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
+      }
     }
     rm(i)
     
