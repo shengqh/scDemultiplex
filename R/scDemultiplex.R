@@ -23,34 +23,51 @@ check_mc_cores<-function(mc.cores) {
 do_cutoff<-function(tagname, data, output_prefix, cutoff_startval){
   values=data[,tagname]
   values=values[values>0] # remove count = 0
+
+  if(is.list(cutoff_startval)){
+    if(tagname %in% names(cutoff_startval)){
+      cur_cutoff = cutoff_startval[tagname]
+    }else{
+      cur_cutoff = 0
+    }
+  }else{
+    cur_cutoff = cutoff_startval
+  }
   cat(paste0("get cutoff of ", tagname, " ...\n"))
-  cutoff=get_cutoff(values, paste0(output_prefix, "_", tagname), cutoff_startval)
+  cutoff=get_cutoff(values, paste0(output_prefix, "_", tagname), cur_cutoff)
   return(cutoff)
 }
 
 #' @export
-demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0, mc.cores=1){
-  if(!require("choisycutoff")){
-    BiocManager::install('shengqh/cutoff')
-    library(choisycutoff)
-  }
-
+demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0, mc.cores=1, cutoff_list=NULL){
   if(is(counts,"Seurat")){
     obj=counts
   }else{
     obj<-get_object(counts)
   }
   
-  mc.cores<-check_mc_cores(mc.cores)
-
   output_file = paste0(output_prefix, ".csv")
   tagnames = rownames(obj[["HTO"]])
   tagnames = tagnames[order(tagnames)]
   
   data <- FetchData(object=obj, vars=tagnames)
   
-  cutoff_list<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
-  names(cutoff_list) = tagnames
+  if(!is.null(cutoff_list)){
+    if(!is.list(cutoff_list)){
+      stop(paste0("cutoff_list has to be named list which conatins all tagnames: ", paste0(tagnames, collapse = ",")))
+    }
+    if(!all(tagnames %in% names(cutoff_list))){
+      stop(paste0("cutoff_list has to be named list which conatins all tagnames: ", paste0(tagnames, collapse = ",")))
+    }
+  }else{
+    if(!require("choisycutoff")){
+      BiocManager::install('shengqh/cutoff')
+      library(choisycutoff)
+    }
+    mc.cores<-check_mc_cores(mc.cores)
+    cutoff_list<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
+    names(cutoff_list) = tagnames
+  }
   print(cutoff_list)
 
   tagname=tagnames[1]  
