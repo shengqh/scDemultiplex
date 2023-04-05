@@ -2,13 +2,13 @@ Encoding: UTF-8
 Package: scDemultiplex
 Type: Package
 Title: R package for demultiplex of the single cell HTO data
-Version: 0.0.2
-Date: 2023-03-04
+Version: 0.0.3
+Date: 2023-04-04
 Authors@R: c(person("Li-ching", "Huang", email = "li-ching.huang.1@vumc.org", role = c("aut")),
-             person("Stolze", "Joey", email = "lk.stolze@vumc.org", role = c("aut")),
+             person("Joey", "Stolze", email = "lk.stolze@vumc.org", role = c("aut")),
              person("Yu", "Shyr", email = "yu.shyr@vumc.org", role = c("aut")),
              person("Qi", "Liu", email = "qi.liu@vumc.org", role = c("aut")),
-		     person("Quanhu", "Sheng", email = "quanhu.sheng.1@vumc.org", role = c("aut", "cre"))
+    		     person("Quanhu", "Sheng", email = "quanhu.sheng.1@vumc.org", role = c("aut", "cre"))
             )
 Description: 
   Demultiplex: R package for demultiplex of the single cell HTO data.
