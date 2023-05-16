@@ -68,6 +68,8 @@ demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0, mc.cores=1, c
     cutoff_list<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
     names(cutoff_list) = tagnames
   }
+  saveRDS(cutoff_list, paste0(output_prefix, ".cutoff_list.rds"))
+
   print(cutoff_list)
 
   tagname=tagnames[1]  
@@ -106,7 +108,7 @@ estimate_alpha<-function(name, taglist){
 }
 
 #' @export
-demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=TRUE){
+demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE){
   mc.cores<-check_mc_cores(mc.cores)
 
   dd <- obj[["HTO"]]@counts
@@ -122,6 +124,9 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
   start_time2 <- Sys.time()
   
   dd$HTO_classification <- unlist(obj[[init_column]])
+
+  df<-data.frame(table(dd$HTO_classification))
+  df$Iteration=0
   
   #cl <- makeCluster(nn.tag)  
   #registerDoParallel(cl) 
@@ -192,9 +197,15 @@ demulti_refine<-function(obj, p.cut=0.001, iterations=10, init_column="scDemulti
       }
     }
     rm(i)
-    
+
+    cur_df<-data.frame(table(dd$HTO_classification))
+    cur_df$Iteration=kk   
+
+    df<-rbind(df, cur_df) 
   }
   rm(kk)
+
+  write.csv(df, paste0(output_prefix, ".iteration.csv"))
   
   end_time2 <- Sys.time()
   time_run2 <- end_time2 - start_time2
