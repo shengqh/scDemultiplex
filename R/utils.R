@@ -134,6 +134,7 @@ my_cutoff<-function (object, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
 
 get_cutoff<-function(values, prefix, cutoff_startval=0){
   my_out <- my_em(values,"normal","normal", cutoff_point=cutoff_startval)
+  saveRDS(my_out, paste0(prefix, ".em.rds"))
   cut_off <- my_cutoff(my_out)
   png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
   hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
