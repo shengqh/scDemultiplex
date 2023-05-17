@@ -134,6 +134,8 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
   kk=1
   for(kk in 1:iterations){
     print(paste0("refine iteration ", kk))
+
+    lastClassification = dd$HTO_classification
     
     taglist <- split(dd[tag.var], dd$HTO_classification)
     taglist <- taglist[! names(taglist) %in% c("Negative","Doublet")]
@@ -198,6 +200,10 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
     }
     rm(i)
 
+    if(all(lastClassification == dd$HTO_classification)){
+      break
+    }
+
     cur_df<-data.frame(table(dd$HTO_classification))
     cur_df$Iteration=kk   
 
@@ -205,7 +211,8 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
   }
   rm(kk)
 
-  write.csv(df, paste0(output_prefix, ".iteration.csv"))
+  mdf<-dcast(df, Var1~Iteration, value.var="Freq")
+  write.csv(mdf, paste0(output_prefix, ".iteration.csv"))
   
   end_time2 <- Sys.time()
   time_run2 <- end_time2 - start_time2
