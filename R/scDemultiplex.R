@@ -124,10 +124,13 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
   start_time2 <- Sys.time()
   
   dd$HTO_classification <- unlist(obj[[init_column]])
-
+  
   df<-data.frame(table(dd$HTO_classification))
   df$Iteration=0
-  
+
+  hc<-dd[,"HTO_classification", drop=FALSE]
+  colnames(hc)="0"
+
   #cl <- makeCluster(nn.tag)  
   #registerDoParallel(cl) 
   
@@ -206,13 +209,18 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
 
     cur_df<-data.frame(table(dd$HTO_classification))
     cur_df$Iteration=kk   
-
     df<-rbind(df, cur_df) 
+    
+    cur_hc<-dd[,"HTO_classification", drop=FALSE]
+    colnames(cur_hc)=kk
+    hc<-cbind(hc, cur_hc) 
   }
   rm(kk)
 
   mdf<-dcast(df, Var1~Iteration, value.var="Freq")
   write.csv(mdf, paste0(output_prefix, ".iteration.csv"), row.names=FALSE)
+
+  write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=FALSE)
   
   end_time2 <- Sys.time()
   time_run2 <- end_time2 - start_time2
