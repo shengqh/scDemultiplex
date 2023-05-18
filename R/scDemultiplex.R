@@ -220,7 +220,7 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
   mdf<-dcast(df, Var1~Iteration, value.var="Freq")
   write.csv(mdf, paste0(output_prefix, ".iteration.csv"), row.names=FALSE)
 
-  write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=FALSE)
+  write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=TRUE)
   
   end_time2 <- Sys.time()
   time_run2 <- end_time2 - start_time2
