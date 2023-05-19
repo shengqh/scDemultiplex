@@ -107,6 +107,17 @@ estimate_alpha<-function(name, taglist){
   return(alpha_est)
 }
 
+#If at least 2 singlets moved from one tag (A) to another tag (B), we call it one shift of B.
+#If there are at least two shifts of B, the refinement stops.
+should_stop<-function(begin_calls, refined_calls, min_singlet_of_shift=2, min_shift=2){
+  move_tb = table(begin_calls, refined_calls)
+  move_tb_2 = move_tb[!(rownames(move_tb) %in% c("Doublet", "Negative")), !(colnames(move_tb) %in% c("Doublet", "Negative"))]
+  
+  move_from_other_singlets = unlist(apply(move_tb_2, 2, function(x){ sum(x >= min_singlet_of_shift) }))
+  result = any(move_from_other_singlets > min_shift)
+  return(result)
+}
+
 #' @export
 demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE){
   mc.cores<-check_mc_cores(mc.cores)
@@ -206,7 +217,7 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
     if(all(lastClassification == dd$HTO_classification)){
       break
     }
-
+    
     cur_df<-data.frame(table(dd$HTO_classification))
     cur_df$Iteration=kk   
     df<-rbind(df, cur_df) 
@@ -214,6 +225,11 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
     cur_hc<-dd[,"HTO_classification", drop=FALSE]
     colnames(cur_hc)=kk
     hc<-cbind(hc, cur_hc) 
+
+    if(should_stop(lastClassification, dd$HTO_classification)){
+      print("  too many singlets shifted from multiple tags to a tag, stop.")
+      break
+    }
   }
   rm(kk)
 
