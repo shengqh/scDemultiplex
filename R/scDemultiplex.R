@@ -227,7 +227,8 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
     hc<-cbind(hc, cur_hc) 
 
     if(should_stop(lastClassification, dd$HTO_classification)){
-      print("  too many singlets shifted from multiple tags to a tag, stop.")
+      dd$HTO_classification = lastClassification
+      print("  too many singlets shifted from multiple tags to another same tag, stop.")
       break
     }
   }
