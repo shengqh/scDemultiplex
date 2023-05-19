@@ -215,6 +215,7 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
     rm(i)
 
     if(all(lastClassification == dd$HTO_classification)){
+      print("  no change anymore, stop.")
       break
     }
     
