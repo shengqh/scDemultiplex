@@ -109,7 +109,7 @@ estimate_alpha<-function(name, taglist){
 
 #If at least 3 singlets moved from one tag (A) to another tag (B), we call it one cross assignment of B.
 #If there are at least two cross assignment of B, the refinement stops.
-should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, min_tag_cross_assigned){
+should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, min_tag_cross_assigned=2){
   move_tb = table(begin_calls, refined_calls)
   move_tb_2 = move_tb[!(rownames(move_tb) %in% c("Doublet", "Negative")), !(colnames(move_tb) %in% c("Doublet", "Negative"))]
   
