@@ -107,19 +107,20 @@ estimate_alpha<-function(name, taglist){
   return(alpha_est)
 }
 
-#If at least 2 singlets moved from one tag (A) to another tag (B), we call it one shift of B.
-#If there are at least two shifts of B, the refinement stops.
-should_stop<-function(begin_calls, refined_calls, min_singlet_of_shift=2, min_shift=2){
+#If at least 3 singlets moved from one tag (A) to another tag (B), we call it one cross assignment of B.
+#If there are at least two cross assignment of B, the refinement stops.
+should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, min_tag_cross_assigned){
   move_tb = table(begin_calls, refined_calls)
   move_tb_2 = move_tb[!(rownames(move_tb) %in% c("Doublet", "Negative")), !(colnames(move_tb) %in% c("Doublet", "Negative"))]
   
-  move_from_other_singlets = unlist(apply(move_tb_2, 2, function(x){ sum(x >= min_singlet_of_shift) }))
-  result = any(move_from_other_singlets > min_shift)
+  move_from_other_singlets = unlist(apply(move_tb_2, 2, function(x){ sum(x >= min_singlet_cross_assigned) }))
+  #since there is one value from self to self, using ">" instead of ">="
+  result = any(move_from_other_singlets > min_tag_cross_assigned)
   return(result)
 }
 
 #' @export
-demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE){
+demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE, min_singlet_cross_assigned=3, min_tag_cross_assigned=2){
   mc.cores<-check_mc_cores(mc.cores)
 
   dd <- obj[["HTO"]]@counts
@@ -227,7 +228,7 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
     colnames(cur_hc)=kk
     hc<-cbind(hc, cur_hc) 
 
-    if(should_stop(lastClassification, dd$HTO_classification)){
+    if(should_stop(lastClassification, dd$HTO_classification, min_singlet_cross_assigned, min_tag_cross_assigned)){
       dd$HTO_classification = lastClassification
       print("  too many singlets shifted from multiple tags to another same tag, stop.")
       break
