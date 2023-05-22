@@ -30,6 +30,6 @@ BiocManager::install("shengqh/scDemultiplex")
 
 # Usage
 
-Here is one [vignettes/scDemultiplex.html](Example).
+Here is one [Example](vignettes/scDemultiplex.html).
 
-For detailed analysis of the paper, please have a look at [https://github.com/shengqh/scDemultiplex_analysis](scDemultiplex_analysis).
+For detailed analysis of the paper, please have a look at [scDemultiplex_analysis](https://github.com/shengqh/scDemultiplex_analysis).
