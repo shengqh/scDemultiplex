@@ -36,6 +36,10 @@ knitr::opts_chunk$set(echo=FALSE, include=TRUE, warning=FALSE, message=FALSE)
 
 ```{r results="asis"}
 hto_counts = data.frame(fread("https://raw.githubusercontent.com/Oshlack/hashtag-demux-paper/main/data/batch1_c1_hto_counts.csv"), row.names=1, check.names=F)
+
+#As an example, we sample 4000 cells to speed up
+hto_counts <- hto_counts[, sample(colnames(hto_counts), size=4000, replace=F)]
+
 obj <- CreateSeuratObject(counts = hto_counts, assay="HTO")
 obj <- NormalizeData(obj, assay = "HTO", normalization.method = "CLR")
 DefaultAssay(object = obj) <- "HTO"

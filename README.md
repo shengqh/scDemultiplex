@@ -9,12 +9,11 @@ scDemultiplex
 
 # Introduction
 
-scDemultiplex is an R package for demultiplex of the single cell HTO data.
+Single-cell sequencing have been widely used to characterize cellular heterogeneity. Sample multiplexing where multiple samples are pooled together for single-cell experiments, attracts wide attention due to its benefits of increasing capacity, reducing costs, and minimizing batch effects. To analyze multiplexed data, the first crucial step is to demultiplex, the process of assigning cells to individual samples. Inaccurate demultiplexing will create false cell types and result in misleading characterization. We propose scDemultiplex, which models hashtag oligo (HTO) counts with beta-binomial distribution and uses an iterative strategy for further refinement. Compared with five existing demultiplexing approaches, scDemultiplex achieves the highest accuracy in identifying singlets and removing negatives and multiplets.
 
 <a name="installation"/>
 
 # Installation
-
 
 ```R
 library(devtools)
@@ -28,3 +27,9 @@ or
 BiocManager::install("shengqh/cutoff")
 BiocManager::install("shengqh/scDemultiplex")
 ```
+
+# Usage
+
+Here is one [vignettes/scDemultiplex.html](Example).
+
+For detailed analysis of the paper, please have a look at [https://github.com/shengqh/scDemultiplex_analysis](scDemultiplex_analysis).
