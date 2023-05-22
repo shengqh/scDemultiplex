@@ -34,7 +34,11 @@ do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
     cur_cutoff = cutoff_startval
   }
   print(paste0("get cutoff of ", tagname, " ..."))
-  cur_prefix = ifelse(is.null(output_prefix), NULL, paste0(output_prefix, "_", tagname))
+  if(is.null(output_prefix)){
+    cur_prefix = NULL  
+  }else{
+    cur_prefix = paste0(output_prefix, "_", tagname)
+  }
   cutoff=get_cutoff(values, cur_prefix, cur_cutoff)
   return(cutoff)
 }
