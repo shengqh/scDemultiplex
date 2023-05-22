@@ -1,5 +1,5 @@
 ---
-title: "HTO Report"
+title: "HTO Demultiplex Report"
 author: "Quanhu Sheng"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
@@ -8,7 +8,7 @@ output:
     code_folding: hide
 ---
 
-```{r setup, include = FALSE}
+```{r setup, include = FALSE, echo=TRUE}
 library('data.table')
 library('Seurat')
 library('scDemultiplex')
@@ -23,7 +23,7 @@ theme_bw3 <- function () {
 	)
 }
 
-knitr::opts_chunk$set(echo=FALSE, include=TRUE, warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(echo=TRUE, include=TRUE, warning=FALSE, message=FALSE)
 ```
 
 ```{css, echo=FALSE}
