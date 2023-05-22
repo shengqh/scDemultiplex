@@ -1,0 +1,75 @@
+---
+title: "HTO Report"
+author: "Quanhu Sheng"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  rmdformats::readthedown:
+    toc_depth: 3
+    code_folding: hide
+---
+
+```{r setup, include = FALSE}
+library('data.table')
+library('Seurat')
+library('scDemultiplex')
+library('knitr')
+
+theme_bw3 <- function () { 
+	theme_bw() +
+	theme(
+		strip.background = element_rect(fill = NA, colour = 'black'),
+		panel.border = element_rect(fill = NA, color = "black"),			
+		axis.line = element_line(colour = "black", size = 0.5)
+	)
+}
+
+knitr::opts_chunk$set(echo=FALSE, include=TRUE, warning=FALSE, message=FALSE)
+```
+
+```{css, echo=FALSE}
+#content{
+    max-width:1920px;
+}
+```
+
+# Read HTO count matrix and prepare seurat object
+
+```{r results="asis"}
+hto_counts = data.frame(fread("https://raw.githubusercontent.com/Oshlack/hashtag-demux-paper/main/data/batch1_c1_hto_counts.csv"), row.names=1, check.names=F)
+obj <- CreateSeuratObject(counts = hto_counts, assay="HTO")
+obj <- NormalizeData(obj, assay = "HTO", normalization.method = "CLR")
+DefaultAssay(object = obj) <- "HTO"
+
+tagnames=rownames(obj[["HTO"]])
+ntags=length(tagnames)
+
+obj<-ScaleData(obj, features=tagnames, verbose=FALSE)
+obj<-RunPCA(obj, features=tagnames, approx=FALSE)    
+obj<-RunUMAP(obj, features=tagnames, slot="scale.data")
+```
+
+# Perform demultiplex by cutoff
+
+```{r results='markup'}
+obj = demulti_cutoff(obj, mc.cores=ntags)
+```
+
+```{r results="asis"}
+print(kable(table(obj$scDemultiplex_cutoff)))
+print(kable(table(obj$scDemultiplex_cutoff.global)))
+g<-DimPlot(obj, reduction = "umap", group.by="scDemultiplex_cutoff")
+print(g)
+```
+
+# Refine demultiplex result
+
+```{r results='markup'}
+obj<-demulti_refine(obj, mc.cores=ntags)
+```
+
+```{r results="asis"}
+print(kable(table(obj$scDemultiplex)))
+print(kable(table(obj$scDemultiplex.global)))
+g<-DimPlot(obj, reduction = "umap", group.by="scDemultiplex")
+print(g)
+```

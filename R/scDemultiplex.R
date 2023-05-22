@@ -20,7 +20,7 @@ check_mc_cores<-function(mc.cores) {
   return(mc.cores)
 }
 
-do_cutoff<-function(tagname, data, output_prefix, cutoff_startval){
+do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   values=data[,tagname]
   values=values[values>0] # remove count = 0
 
@@ -33,20 +33,20 @@ do_cutoff<-function(tagname, data, output_prefix, cutoff_startval){
   }else{
     cur_cutoff = cutoff_startval
   }
-  cat(paste0("get cutoff of ", tagname, " ...\n"))
-  cutoff=get_cutoff(values, paste0(output_prefix, "_", tagname), cur_cutoff)
+  print(paste0("get cutoff of ", tagname, " ..."))
+  cur_prefix = ifelse(is.null(output_prefix), NULL, paste0(output_prefix, "_", tagname))
+  cutoff=get_cutoff(values, cur_prefix, cur_cutoff)
   return(cutoff)
 }
 
 #' @export
-demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0, mc.cores=1, cutoff_list=NULL){
+demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores=1, cutoff_list=NULL){
   if(is(counts,"Seurat")){
     obj=counts
   }else{
     obj<-get_object(counts)
   }
   
-  output_file = paste0(output_prefix, ".csv")
   tagnames = rownames(obj[["HTO"]])
   tagnames = tagnames[order(tagnames)]
   
@@ -68,9 +68,11 @@ demulti_cutoff<-function(counts, output_prefix, cutoff_startval=0, mc.cores=1, c
     cutoff_list<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
     names(cutoff_list) = tagnames
   }
-  saveRDS(cutoff_list, paste0(output_prefix, ".cutoff_list.rds"))
+  if(!is.null(output_prefix)){
+    saveRDS(cutoff_list, paste0(output_prefix, ".cutoff_list.rds"))
+  }
 
-  print(cutoff_list)
+  print(table(cutoff_list))
 
   tagname=tagnames[1]  
   for (tagname in tagnames) {
@@ -120,7 +122,7 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
 }
 
 #' @export
-demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE, min_singlet_cross_assigned=3, min_tag_cross_assigned=2){
+demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE, min_singlet_cross_assigned=3, min_tag_cross_assigned=2){
   mc.cores<-check_mc_cores(mc.cores)
 
   dd <- obj[["HTO"]]@counts
@@ -235,15 +237,16 @@ demulti_refine<-function(obj, output_prefix="demulti_refine", p.cut=0.001, itera
     }
   }
   rm(kk)
-
-  mdf<-dcast(df, Var1~Iteration, value.var="Freq")
-  write.csv(mdf, paste0(output_prefix, ".iteration.csv"), row.names=FALSE)
-
-  write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=TRUE)
+  
+  if(!is.null(output_prefix)){
+    mdf<-dcast(df, Var1~Iteration, value.var="Freq")
+    write.csv(mdf, paste0(output_prefix, ".iteration.csv"), row.names=FALSE)
+    write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=TRUE)
+  }
   
   end_time2 <- Sys.time()
   time_run2 <- end_time2 - start_time2
-  time_run2 # Time difference of 23.76274 mins
+  time_run2
   
   # ----
   

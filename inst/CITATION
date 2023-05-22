@@ -1,12 +1,15 @@
 citEntry(entry="article",
-         title = "scRNABatchQC",
-         author = personList( as.person("Quanhu Sheng"),
-                              as.person("Jie Ping"),
+         title = "scDemultiplex",
+         author = personList( as.person("Li-Ching Huang"),
+                              as.person("Lindsey K Stolze"),
+                              as.person("Alexander Gelbard"),
                               as.person("Yu Shyr"),
-                              as.person("Qi Liu")),
-         year = 2018,
+                              as.person("Qi Liu"),
+                              as.person("Quanhu Sheng")
+                              ),
+         year = 2023,
          journal = "",
          doi = "",
          url = "",
-         textVersion = "scRNABatchQC: Quality control of multiple single cell RNAseq data" )
+         textVersion = "scDemultiplex: An iterative beta-binomial model-based method for accurate demultiplexing with hashtag oligos" )
 

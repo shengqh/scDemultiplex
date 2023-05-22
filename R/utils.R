@@ -132,16 +132,24 @@ my_cutoff<-function (object, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
 
 # ----
 
-get_cutoff<-function(values, prefix, cutoff_startval=0){
+get_cutoff<-function(values, prefix=NULL, cutoff_startval=0){
   my_out <- my_em(values,"normal","normal", cutoff_point=cutoff_startval)
-  saveRDS(my_out, paste0(prefix, ".em.rds"))
+  
+  if(!is.null(prefix)){
+    saveRDS(my_out, paste0(prefix, ".em.rds"))
+  }
+  
   cut_off <- my_cutoff(my_out)
-  png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
-  hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
-  lines(density(values),lwd=1.5,col="blue")
-  lines(my_out,lwd=1.5,col="red")
-  abline(v=cut_off[1],lwd=1.5,col="brown")
-  dev.off()
+  
+  if(!is.null(prefix)){
+    png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
+    hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
+    lines(density(values),lwd=1.5,col="blue")
+    lines(my_out,lwd=1.5,col="red")
+    abline(v=cut_off[1],lwd=1.5,col="brown")
+    dev.off()
+  }
+  
   return(cut_off[1])
 }
 
@@ -192,14 +200,10 @@ read_hto<-function(rdsfile) {
   return(get_object(htos))
 }
 
-
-# ----
-
-
-output_post_classification<-function(obj, output_prefix){
+output_post_classification<-function(obj, output_prefix, demultiplex_column="scDemultiplex"){
   tagnames=rownames(obj[["HTO"]])
   
-  hto_names=unique(obj$HTO_classification)
+  hto_names=unique(obj@meta.data[,demultiplex_column])
   a_hto_names=hto_names[!(hto_names %in% c("Doublet","Negative"))]
   a_hto_names=a_hto_names[order(a_hto_names)]
   hto_names=c(a_hto_names, "Negative", "Doublet")
@@ -229,15 +233,9 @@ output_post_classification<-function(obj, output_prefix){
   write.csv(tmat, file=paste0(output_prefix, ".csv"))
   
   if(length(tagnames) >= 2) {
-    # if(length(tagnames) > 3){
-    #   obj<-RunPCA(obj)
-    #   obj<-RunUMAP(obj)
-    # }else{
-    VariableFeatures(obj)<-tagnames
-    obj<-ScaleData(obj)
+    obj<-ScaleData(obj, features=tagnames, verbose=FALSE)
+    obj<-RunPCA(obj, features=tagnames, approx=FALSE)    
     obj<-RunUMAP(obj, features=tagnames, slot="scale.data")
-    #obj<-RunUMAP(obj, features=tagnames)
-    # }
     
     png(paste0(output_prefix, ".umap.class.png"), width=2000, height=1800, res=300)
     g<-DimPlot(obj, reduction = "umap", group.by="HTO_classification")

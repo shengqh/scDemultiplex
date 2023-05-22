@@ -18,7 +18,6 @@
 .Rproj.user/
 
 # produced vignettes
-vignettes/*.html
 vignettes/*.pdf
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
@@ -32,15 +31,10 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 .Rproj.user
-/R/scRNABatchQCreport_files/figure-html
-/R/scRNABatchQCreport_cache/html/__packages
-/R/scRNABatchQCreport_cache/html
-/R/scRNABatchQCreport.html
 /*.rdata
 /*.table
 inst/doc
 /vignettes/.webgestalt_cache
 Meta
-/vignettes/output.rds
 /doc
-/analysis/T06_check_result.html
+vignettes/scDemultiplex_files

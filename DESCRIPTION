@@ -2,16 +2,17 @@ Encoding: UTF-8
 Package: scDemultiplex
 Type: Package
 Title: R package for demultiplex of the single cell HTO data
-Version: 0.0.5
-Date: 2023-05-19
+Version: 0.0.6
+Date: 2023-05-22
 Authors@R: c(person("Li-ching", "Huang", email = "li-ching.huang.1@vumc.org", role = c("aut")),
-             person("Joey", "Stolze", email = "lk.stolze@vumc.org", role = c("aut")),
+             person("Lindsey", "Stolze", email = "lk.stolze@vumc.org", role = c("aut")),
+             person("Alexander", "Gelbard", email = "alexander.gelbard@vumc.org", role = c("aut")),
              person("Yu", "Shyr", email = "yu.shyr@vumc.org", role = c("aut")),
              person("Qi", "Liu", email = "qi.liu@vumc.org", role = c("aut")),
     		     person("Quanhu", "Sheng", email = "quanhu.sheng.1@vumc.org", role = c("aut", "cre"))
             )
 Description: 
-  Demultiplex: R package for demultiplex of the single cell HTO data.
+  Demultiplex: scDemultiplex: An iterative beta-binomial model-based method for accurate demultiplexing with hashtag oligos
 License: LGPL
 URL: https://github.com/shengqh/scDemultiplex
 Depends: R (>= 3.5), R.utils, ggplot2, Seurat, dirmult, MGLM, zoo, gridExtra, edgeR, TailRank, reshape2, tictoc, ggExtra, choisycutoff
