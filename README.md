@@ -45,4 +45,4 @@ For detailed analysis of the paper, please have a look at [scDemultiplex_analysi
 | batch3_c1 | ACCRE Cluster Gateway | Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz | 1000gb | CentOs 7 | 4.3.0 | 32886 | 25.5 sec             | 6.6 min              |
 | batch3_c2 | ACCRE Cluster Gateway | Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz | 1000gb | CentOs 7 | 4.3.0 | 31956 | 23.7 sec             | 11.4 min             |
 
-Both scDemultiplex_cutoff and scDemultiplex used mutli-thread. 
+Both scDemultiplex cutoff mode and the following scDemultiplex refinement used mutli-thread. 
