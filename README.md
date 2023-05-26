@@ -36,7 +36,7 @@ For detailed analysis of the paper, please have a look at [scDemultiplex_analysi
 
 # Speed test
 
-| Dataset   | Computer              | CPU                                      | Memory | System   | R     | Cells | scDemultiplex cutoff | scDemultiplex refine |
+| Dataset   | Computer              | CPU                                      | Memory | System   | R     | Cells | scDemultiplex cutoff | scDemultiplex refinement |
 | --------- | --------------------- | ---------------------------------------- | ------ | -------- | ----- | ----- | -------------------- | -------------------- |
 | batch1_c1 | ACCRE Cluster Gateway | Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz | 1000gb | CentOs 7 | 4.3.0 | 11900 | 8.1 sec              | 3.8 min              |
 | batch1_c2 | ACCRE Cluster Gateway | Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz | 1000gb | CentOs 7 | 4.3.0 | 12923 | 8.9 sec              | 2.7 min              |
