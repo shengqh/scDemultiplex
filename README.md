@@ -36,13 +36,13 @@ For detailed analysis of the paper, please have a look at [scDemultiplex_analysi
 
 # Speed test
 
-|           | Computer              | CPU                                      | Memory | System   | R_version | Cells     | scDemultiplex_cutoff | scDemultiplex_refine |
+|           | Computer              | CPU                                      | Memory | System   | R         | Cells     | scDemultiplex cutoff | scDemultiplex refine |
 | --------- | --------------------- | ---------------------------------------- | ------ | -------- | --------- | --------- | -------------------- | -------------------- |
 | batch1_c1 | ACCRE Cluster Gateway | Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz | 1000gb | CentOs 7 | 4.3.0     | 11900     | 8.1 secs             | 3.8 min              |
-| batch1_c2 |                       |                                          |        |          | 12923     | 8.9 secs  | 2.7 min              |
-| batch2_c1 |                       |                                          |        |          | 24905     | 28.5 secs | 4.2 min              |
-| batch2_c2 |                       |                                          |        |          | 25763     | 22.2 secs | 4.1 min              |
-| batch3_c1 |                       |                                          |        |          | 32886     | 25.5 secs | 6.6 min              |
-| batch3_c2 |                       |                                          |        |          | 31956     | 23.7 secs | 11.4 min             |
+| batch1_c2 |                       |                                          |        |          |           | 12923     | 8.9 secs             | 2.7 min              |
+| batch2_c1 |                       |                                          |        |          |           | 24905     | 28.5 secs            | 4.2 min              |
+| batch2_c2 |                       |                                          |        |          |           | 25763     | 22.2 secs            | 4.1 min              |
+| batch3_c1 |                       |                                          |        |          |           | 32886     | 25.5 secs            | 6.6 min              |
+| batch3_c2 |                       |                                          |        |          |           | 31956     | 23.7 secs            | 11.4 min             |
 
 Both scDemultiplex_cutoff and scDemultiplex used mutli-thread. 
