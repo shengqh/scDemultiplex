@@ -59,7 +59,7 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
   }else{
     cat("using core", mc.cores, "\n")
     system.time(
-      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=1))
+      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
     )
   }
   return(results)
