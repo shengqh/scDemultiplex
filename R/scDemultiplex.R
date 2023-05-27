@@ -9,6 +9,7 @@ library(edgeR)
 library(dirmult)
 library(MGLM) # ddirmn
 library(parallel)
+library(doParallel)
 library(tictoc)
 
 check_mc_cores<-function(mc.cores) {  
