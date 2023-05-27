@@ -47,7 +47,7 @@ do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
 
 do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.cores){
   if (is_windows() & (mc.cores > 1)) {
-    cat("using", mc.cores,"threads in windows\n")
+    cat("using", mc.cores, "threads in", .Platform$OS.type, " by parLapply.\n")
     cl <- makeCluster(mc.cores)  
     registerDoParallel(cl)  
     #https://stackoverflow.com/questions/12023403/using-parlapply-and-clusterexport-inside-a-function
@@ -57,7 +57,7 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
     )
     stopCluster(cl)
   }else{
-    cat("using core", mc.cores, "\n")
+    cat("using", mc.cores, "threads in", .Platform$OS.type, " by mclapply.\n")
     system.time(
       results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
     )
@@ -142,7 +142,7 @@ estimate_alpha<-function(name, taglist){
 
 do_estimate_alpha_parallel<-function(tagnames, taglist, mc.cores){
   if (is_windows() & (mc.cores > 1)) {
-    cat("using", mc.cores,"threads in windows\n")
+    cat("using", mc.cores, "threads in", .Platform$OS.type, " by parLapply.\n")
     cl <- makeCluster(mc.cores)  
     registerDoParallel(cl)  
     clusterExport(cl,list('estimate_alpha', 'goodTuringProportions', 'dirmult', 'taglist'), envir=environment())
@@ -151,7 +151,7 @@ do_estimate_alpha_parallel<-function(tagnames, taglist, mc.cores){
     )
     stopCluster(cl)
   }else{
-    cat("using core", mc.cores, "\n")
+    cat("using", mc.cores, "threads in", .Platform$OS.type, " by mclapply.\n")
     system.time(
       results <- parallel::mclapply(tagnames, estimate_alpha, taglist=taglist, mc.cores=mc.cores)
     )
