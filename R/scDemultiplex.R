@@ -12,11 +12,11 @@ library(parallel)
 library(tictoc)
 
 check_mc_cores<-function(mc.cores) {  
-  if(.Platform$OS.type == "windows") {
-    mc.cores=1
-  }else{
-    mc.cores=min(parallel::detectCores() - 1, max(1, mc.cores))
-  }
+  # if(.Platform$OS.type == "windows") {
+  #   mc.cores=1
+  # }else{
+  mc.cores=min(parallel::detectCores() - 1, max(1, mc.cores))
+  # }
   return(mc.cores)
 }
 
@@ -41,6 +41,25 @@ do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   }
   cutoff=get_cutoff(values, cur_prefix, cur_cutoff)
   return(cutoff)
+}
+
+do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.cores){
+  if (is_windows() & (mc.cores > 1)) {
+    cat("using", mc.cores,"threads in windows\n")
+    cl <- makeCluster(mc.cores)  
+    registerDoParallel(cl)  
+    clusterExport(cl,list('zoo','rollapply', 'my_startval', 'my_cutoff', 'get_cutoff', "my_em", 'do_cutoff','data',"output_prefix","cutoff_startval"))
+    system.time(
+      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, output_prefix, cutoff_startval))
+    )
+    stopCluster(cl)
+  }else{
+    cat("using core", mc.cores, "\n")
+    system.time(
+      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=1))
+    )
+  }
+  return(results)
 }
 
 #' @export
@@ -69,7 +88,12 @@ demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores
       library(choisycutoff)
     }
     mc.cores<-check_mc_cores(mc.cores)
-    cutoff_list<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
+    cutoff_list = do_cutoff_parallel(
+      tagnames = tagnames, 
+      data = data, 
+      output_prefix = output_prefix, 
+      cutoff_startval = cutoff_startval, 
+      mc.cores=mc.cores )
     names(cutoff_list) = tagnames
   }
   if(!is.null(output_prefix)){
@@ -111,6 +135,25 @@ estimate_alpha<-function(name, taglist){
   alpha_t <- (1-theta)/theta
   alpha_est <- alpha_t*p.tu
   return(alpha_est)
+}
+
+do_estimate_alpha_parallel<-function(tagnames, taglist, mc.cores){
+  if (is_windows() & (mc.cores > 1)) {
+    cat("using", mc.cores,"threads in windows\n")
+    cl <- makeCluster(mc.cores)  
+    registerDoParallel(cl)  
+    clusterExport(cl,list('estimate_alpha', 'goodTuringProportions', 'dirmult', 'taglist'))
+    system.time(
+      results<-parLapply(cl,tagnames,fun=estimate_alpha, taglist)
+    )
+    stopCluster(cl)
+  }else{
+    cat("using core", mc.cores, "\n")
+    system.time(
+      results <- parallel::mclapply(tagnames, estimate_alpha, taglist=taglist, mc.cores=mc.cores)
+    )
+  }
+  return(results)
 }
 
 #If at least 3 singlets moved from one tag (A) to another tag (B), we call it one cross assignment of B.
@@ -163,7 +206,10 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
     
     print("  estimate alpha ...")
     tic()
-    out.alpha.est <- parallel::mclapply(names(taglist), estimate_alpha, taglist=taglist, mc.cores=mc.cores)
+    out.alpha.est <- do_estimate_alpha_parallel(
+      tagnames = names(taglist), 
+      taglist=taglist, 
+      mc.cores=mc.cores)
     toc()
     names(out.alpha.est)<-names(taglist)
     

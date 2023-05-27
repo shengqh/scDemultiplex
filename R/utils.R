@@ -11,6 +11,10 @@ library("ggExtra")
 
 # ----
 
+is_windows<-function(){
+  return(.Platform$OS.type == "windows")
+}
+
 my_startval <- function(values,D1="normal",D2="normal",cutoff_point=0) {
   if(cutoff_point >0){
     thresh = cutoff_point
