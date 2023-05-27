@@ -16,8 +16,9 @@ check_mc_cores<-function(mc.cores) {
   # if(.Platform$OS.type == "windows") {
   #   mc.cores=1
   # }else{
-  mc.cores=min(parallel::detectCores() - 1, max(1, mc.cores))
+  #mc.cores=min(parallel::detectCores() - 1, max(1, mc.cores))
   # }
+  mc.cores=min(parallel::detectCores(), max(1, mc.cores))
   return(mc.cores)
 }
 
@@ -49,7 +50,8 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
     cat("using", mc.cores,"threads in windows\n")
     cl <- makeCluster(mc.cores)  
     registerDoParallel(cl)  
-    clusterExport(cl,list('zoo','rollapply', 'my_startval', 'my_cutoff', 'get_cutoff', "my_em", 'do_cutoff','data',"output_prefix","cutoff_startval"))
+    #https://stackoverflow.com/questions/12023403/using-parlapply-and-clusterexport-inside-a-function
+    clusterExport(cl,list('zoo','rollapply', 'my_startval', 'my_cutoff', 'get_cutoff', "my_em", 'do_cutoff','data',"output_prefix","cutoff_startval"), envir=environment())
     system.time(
       results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, output_prefix, cutoff_startval))
     )
@@ -143,7 +145,7 @@ do_estimate_alpha_parallel<-function(tagnames, taglist, mc.cores){
     cat("using", mc.cores,"threads in windows\n")
     cl <- makeCluster(mc.cores)  
     registerDoParallel(cl)  
-    clusterExport(cl,list('estimate_alpha', 'goodTuringProportions', 'dirmult', 'taglist'))
+    clusterExport(cl,list('estimate_alpha', 'goodTuringProportions', 'dirmult', 'taglist'), envir=environment())
     system.time(
       results<-parLapply(cl,tagnames,fun=estimate_alpha, taglist)
     )
