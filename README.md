@@ -44,5 +44,11 @@ For detailed analysis of the paper, please have a look at [scDemultiplex_analysi
 | batch2_c2 | ACCRE Cluster Gateway | Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz | 1000gb | CentOs 7 | 4.3.0 | 25763 | 22.2 sec             | 4.1 min              |
 | batch3_c1 | ACCRE Cluster Gateway | Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz | 1000gb | CentOs 7 | 4.3.0 | 32886 | 25.5 sec             | 6.6 min              |
 | batch3_c2 | ACCRE Cluster Gateway | Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz | 1000gb | CentOs 7 | 4.3.0 | 31956 | 23.7 sec             | 11.4 min             |
+| batch1_c1 | Lenovo E590 Laptop | Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz | 64gb   | Windows 10 | 4.3.0 | 11900 | 73.5 sec             | 14.8 min                 |
+| batch1_c2 | Lenovo E590 Laptop | Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz | 64gb   | Windows 10 | 4.3.0 | 12923 | 99.2 sec             | 12.8 min                 |
+| batch2_c1 | Lenovo E590 Laptop | Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz | 64gb   | Windows 10 | 4.3.0 | 24905 | 298.1 sec            | 15.6 min                 |
+| batch2_c2 | Lenovo E590 Laptop | Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz | 64gb   | Windows 10 | 4.3.0 | 25763 | 262.3 sec            | 18.1 min                 |
+| batch3_c1 | Lenovo E590 Laptop | Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz | 64gb   | Windows 10 | 4.3.0 | 32886 | 330.6 sec            | 23.3 min                 |
+| batch3_c2 | Lenovo E590 Laptop | Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz | 64gb   | Windows 10 | 4.3.0 | 31956 | 287 sec              | 42.8 min                 |
 
 Both scDemultiplex cutoff mode and the following scDemultiplex refinement used mutli-thread. 
