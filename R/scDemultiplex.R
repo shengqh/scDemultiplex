@@ -65,6 +65,16 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
   return(results)
 }
 
+#' demulti_cutoff:
+#' Function that performs the initial cell classification (Singlet, Doublet, Negative). 
+#'
+#' @param counts = SEURAT OBJECT with the data to be analyzed.
+#'
+#' @param output_prefix = CHARACTER prefix to be put on the output file names (default NULL).
+#' @param cutoff_startval = INTEGER Start value used to estimate cutoff (default 0).
+#' @param mc.cores = INTEGER of how many cores to run in parallel (default 1).
+#' @param cutoff_list = NAMED LIST cutoffs for each tagname (default NULL). If the cutoff_list is set, classification will be performed based on those predefined cutoffs.
+#'
 #' @export
 demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores=1, cutoff_list=NULL){
   if(is(counts,"Seurat")){
@@ -171,6 +181,20 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
   return(result)
 }
 
+#' demulti_refine:
+#' Function that refines the cell classification iterations performed in demulti_cutoff and calculates a pvalue representing the likelihood of a tag representing a doublet (two cells) or negative (zero cells).
+#'
+#' @param obj = SEURAT OBJECT with the data to be analyzed.
+#'
+#' @param output_prefix = CHARACTER prefix to be put on the output file names (default NULL).
+#' @param p.cut = NUMERIC value between 0 and 1 to use as the pvalue cut off for significance (default 0.001).
+#' @param iterations = INTEGER of how many cell classification iterations to go through (default 10).
+#' @param init_column = CHARACTER name of the column with the initial classifications. If run directly after demulti_cutoff, leave as default (default "scDemultiplex_cutoff").
+#' @param mc.cores = INTEGER of how many cores to run in parallel (default 1).
+#' @param refine_negative_doublet_only = LOGICAL if want only negative cells reported, set as TRUE (default FALSE).
+#' @param min_singlet_cross_assigned = INTEGER of how many cells are allowed to shift from singlet to doublet before halting the analysis (default 3).
+#' @param min_tag_cross_assigned = INTEGER of how many cells can share tags before halting the analysis (default 2).
+#'
 #' @export
 demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE, min_singlet_cross_assigned=3, min_tag_cross_assigned=2){
   mc.cores<-check_mc_cores(mc.cores)
