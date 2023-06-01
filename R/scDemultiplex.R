@@ -66,8 +66,9 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
 }
 
 #' demulti_cutoff:
-#' @description Function that performs the initial cell classification (Singlet, Doublet, Negative). 
-#'
+#' @description
+#' Function that performs the initial cell classification (Singlet, Doublet, Negative).
+#'  
 #' @param counts = SEURAT OBJECT with the data to be analyzed.
 #'
 #' @param output_prefix = CHARACTER prefix to be put on the output file names (default NULL).
