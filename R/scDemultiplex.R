@@ -65,6 +65,8 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
   return(results)
 }
 
+##################################
+
 #' demulti_cutoff:
 #' @description
 #' Function that performs the initial cell classification (Singlet, Doublet, Negative).
@@ -77,6 +79,7 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
 #' @param cutoff_list = NAMED LIST cutoffs for each tagname (default NULL). If the cutoff_list is set, classification will be performed based on those predefined cutoffs.
 #'
 #' @return Seurat object with initial characterizations
+#' @export
 #' 
 #' @example 
 #' #Load in and prepare the data
@@ -108,7 +111,6 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
 #' g<-DimPlot(obj, reduction = "umap", group.by="scDemultiplex_cutoff")
 #' print(g)
 #' 
-#' @export
 demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores=1, cutoff_list=NULL){
   if(is(counts,"Seurat")){
     obj=counts
@@ -214,9 +216,10 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
   return(result)
 }
 
+######################################
+
 #' demulti_refine:
-#' @description
-#' Function that refines the cell classification iterations performed in demulti_cutoff and calculates a pvalue representing the likelihood of a tag representing a doublet (two cells) or negative (zero cells).
+#' @description Function that refines the cell classification iterations performed in demulti_cutoff and calculates a pvalue representing the likelihood of a tag representing a doublet (two cells) or negative (zero cells).
 #'
 #' @param obj = SEURAT OBJECT with the data to be analyzed.
 #'
@@ -230,6 +233,7 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
 #' @param min_tag_cross_assigned = INTEGER of how many cells can share tags before halting the analysis (default 2).
 #'
 #' @return Seurat object with refined cell classifications
+#' @export
 #' 
 #' @example 
 #' #This occurs after the example for demulti_cutoff
@@ -248,7 +252,6 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
 #' g<-DimPlot(obj, reduction = "umap", group.by="scDemultiplex")
 #' print(g)
 #' 
-#' @export
 demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE, min_singlet_cross_assigned=3, min_tag_cross_assigned=2){
   mc.cores<-check_mc_cores(mc.cores)
 
