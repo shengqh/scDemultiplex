@@ -68,8 +68,7 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
 ##################################
 
 #' demulti_cutoff:
-#' @description
-#' Function that performs the initial cell classification (Singlet, Doublet, Negative).
+#' @description Function that performs the initial cell classification (Singlet, Doublet, Negative).
 #'  
 #' @param counts = SEURAT OBJECT with the data to be analyzed.
 #'
@@ -78,10 +77,10 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
 #' @param mc.cores = INTEGER of how many cores to run in parallel (default 1).
 #' @param cutoff_list = NAMED LIST cutoffs for each tagname (default NULL). If the cutoff_list is set, classification will be performed based on those predefined cutoffs.
 #'
-#' @return Seurat object with initial characterizations
+#' @returns Seurat object with initial characterizations
 #' @export
 #' 
-#' @example 
+#' @examples 
 #' #Load in and prepare the data
 #' hto_counts = data.frame(fread("https://raw.githubusercontent.com/Oshlack/hashtag-demux-paper/main/data/batch1_c1_hto_counts.csv"), row.names=1, check.names=F)
 #' #As an example, we sample 4000 cells to speed up
@@ -232,10 +231,10 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
 #' @param min_singlet_cross_assigned = INTEGER of how many cells are allowed to shift from singlet to doublet before halting the analysis (default 3).
 #' @param min_tag_cross_assigned = INTEGER of how many cells can share tags before halting the analysis (default 2).
 #'
-#' @return Seurat object with refined cell classifications
+#' @returns Seurat object with refined cell classifications
 #' @export
 #' 
-#' @example 
+#' @examples
 #' #This occurs after the example for demulti_cutoff
 #' #object from the end of that example used as 'obj'
 #' 
