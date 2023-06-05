@@ -19,6 +19,6 @@ URL: https://github.com/shengqh/scDemultiplex
 Depends: R (>= 3.5), R.utils, ggplot2, Seurat, dirmult, MGLM, zoo, gridExtra, edgeR, TailRank, reshape2, tictoc, ggExtra, bbmle, choisycutoff, doParallel
 biocViews:
 VignetteBuilder: knitr
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Suggests: 
     rmarkdown
