@@ -78,6 +78,36 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
 #'
 #' @return Seurat object with initial characterizations
 #' 
+#' @example 
+#' #Load in and prepare the data
+#' hto_counts = data.frame(fread("https://raw.githubusercontent.com/Oshlack/hashtag-demux-paper/main/data/batch1_c1_hto_counts.csv"), row.names=1, check.names=F)
+#' #As an example, we sample 4000 cells to speed up
+#' hto_counts <- hto_counts[, sample(colnames(hto_counts), size=4000, replace=F)]
+#' #change to Seurat object
+#' obj <- CreateSeuratObject(counts = hto_counts, assay="HTO")
+#' obj <- NormalizeData(obj, assay = "HTO", normalization.method = "CLR")
+#' DefaultAssay(object = obj) <- "HTO"
+#' tagnames=rownames(obj[["HTO"]])
+#' ntags=length(tagnames)
+#' 
+#' #Normalize and run UMAP
+#' obj<-ScaleData(obj, features=tagnames, verbose=FALSE)
+#' obj<-RunPCA(obj, features=tagnames, approx=FALSE)
+#' obj<-RunUMAP(obj, features=tagnames, slot="scale.data")
+#' 
+#' #Running demulti_cutoff
+#' obj = demulti_cutoff(obj, mc.cores=ntags)
+#' 
+#' #Table of cells by Single HTO/Doublet/Negative
+#' print(kable(table(obj$scDemultiplex_cutoff)))
+#' 
+#' #Table of Singlet/Foublet/Negative
+#' print(kable(table(obj$scDemultiplex_cutoff.global)))
+#' 
+#' #Plotting the results of demulti_cutoff in UMAP format
+#' g<-DimPlot(obj, reduction = "umap", group.by="scDemultiplex_cutoff")
+#' print(g)
+#' 
 #' @export
 demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores=1, cutoff_list=NULL){
   if(is(counts,"Seurat")){
@@ -200,7 +230,24 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
 #' @param min_tag_cross_assigned = INTEGER of how many cells can share tags before halting the analysis (default 2).
 #'
 #' @return Seurat object with refined cell classifications
-#'
+#' 
+#' @example 
+#' #This occurs after the example for demulti_cutoff
+#' #object from the end of that example used as 'obj'
+#' 
+#' #Running demulti_refine
+#' obj<-demulti_refine(obj, mc.cores=ntags)
+#' 
+#' #Table of Single HTO/Doublet/Negative
+#' print(kable(table(obj$scDemultiplex)))
+#' 
+#' #Table of Singlet/Doublet/Negative
+#' print(kable(table(obj$scDemultiplex.global)))
+#' 
+#' #Plotting the results of demulti_refine in a UMAP format
+#' g<-DimPlot(obj, reduction = "umap", group.by="scDemultiplex")
+#' print(g)
+#' 
 #' @export
 demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE, min_singlet_cross_assigned=3, min_tag_cross_assigned=2){
   mc.cores<-check_mc_cores(mc.cores)
