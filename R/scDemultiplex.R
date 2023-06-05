@@ -173,6 +173,8 @@ demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores
   return(obj)
 }
   
+##########################################
+
 #Dirichlet-Multinomial Distribution
 estimate_alpha<-function(name, taglist){
   x <-taglist[[name]]
@@ -387,6 +389,8 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
   
   return(obj)
 }
+
+###########################################
 
 #' @export
 hto_umap<-function(obj){
