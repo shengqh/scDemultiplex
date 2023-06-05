@@ -67,7 +67,7 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
 
 ##################################
 
-#' demulti_cutoff:
+#' @title demulti_cutoff:
 #' @description Function that performs the initial cell classification (Singlet, Doublet, Negative).
 #'  
 #' @param counts = SEURAT OBJECT with the data to be analyzed.
@@ -217,7 +217,7 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
 
 ######################################
 
-#' demulti_refine:
+#' @title demulti_refine:
 #' @description Function that refines the cell classification iterations performed in demulti_cutoff and calculates a pvalue representing the likelihood of a tag representing a doublet (two cells) or negative (zero cells).
 #'
 #' @param obj = SEURAT OBJECT with the data to be analyzed.
