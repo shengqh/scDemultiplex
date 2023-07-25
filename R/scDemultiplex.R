@@ -147,7 +147,7 @@ demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores
     saveRDS(cutoff_list, paste0(output_prefix, ".cutoff_list.rds"))
   }
 
-  print(table(cutoff_list))
+  print(cutoff_list)
 
   tagname=tagnames[1]  
   for (tagname in tagnames) {
