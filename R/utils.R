@@ -102,18 +102,18 @@ my_em<-function(values, data_name="em", D1="normal", D2="normal", t=1e-64, cutof
 
 # ----
 
-my_cutoff<-function (object, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level = 0.95) 
+my_cutoff<-function (my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level = 0.95) 
 {
-  coef <- object$out@coef
+  coef <- my_out$out@coef
   the_names <- names(coef)
-  coef <- exp(mc2d::rmultinormal(nb, coef, as.vector(object$out@vcov)))
+  coef <- exp(mc2d::rmultinormal(nb, coef, as.vector(my_out$out@vcov)))
   coef <- as.list(data.frame(t(coef)))
   coef <- lapply(coef, function(x) {
     names(x) <- the_names
     return(as.list(x))
   })
-  out <- sapply(coef, function(x) choisycutoff:::lci0(x, mean(object$lambda), 
-                                                      choisycutoff:::hash[[object$D1]], choisycutoff:::hash[[object$D2]], object$data, t))
+  out <- sapply(coef, function(x) choisycutoff:::lci0(x, mean(my_out$lambda), 
+                                                      choisycutoff:::hash[[my_out$D1]], choisycutoff:::hash[[my_out$D2]], my_out$data, t))
   lambda <- rnorm(nb, out[1, ], out[2, ])
   coef <- sapply(coef, function(x) unlist(x))
   the_names <- c(rownames(coef), "lambda")
@@ -123,7 +123,7 @@ my_cutoff<-function (object, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
     return(as.list(x))
   })
   out <- sapply(coef, function(x) with(x, choisycutoff:::cutoff0(mu1, 
-                                                                 sigma1, mu2, sigma2, lambda, object$D1, object$D2, distr, type1)))
+                                                                 sigma1, mu2, sigma2, lambda, my_out$D1, my_out$D2, distr, type1)))
   out <- MASS::fitdistr(out, "normal")
   the_mean <- out$estimate["mean"]
   level <- (1 - level)/2
@@ -142,14 +142,27 @@ get_cutoff<-function(values, prefix=NULL, cutoff_startval=0){
   if(!is.null(prefix)){
     saveRDS(my_out, paste0(prefix, ".em.rds"))
   }
-  
-  cut_off <- my_cutoff(my_out)
-  
+
+  cut_off <- tryCatch({
+      my_cutoff(my_out)
+    }, error=function(e){
+      if(cutoff_startval == 0){
+        stop(paste0("failed to find cutoff due to: ", e))
+      }else{
+        print(paste0("failed to find cutoff due to: ", e, ", use start value ", cutoff_startval, " as cutoff"))
+        return(cutoff_startval)
+      }
+    }
+  )
+
   if(!is.null(prefix)){
     png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
     hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
     lines(density(values),lwd=1.5,col="blue")
     lines(my_out,lwd=1.5,col="red")
+    if(cutoff_startval != 0){
+      abline(v=cutoff_startval,lwd=1.5,col="green")
+    }
     abline(v=cut_off[1],lwd=1.5,col="brown")
     dev.off()
   }

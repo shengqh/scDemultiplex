@@ -49,7 +49,7 @@ do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0
   }else{
     cur_prefix = paste0(output_prefix, "_", tagname)
   }
-  cutoff=get_cutoff(values, cur_prefix, cur_cutoff)
+  cutoff=get_cutoff(values=values, prefix=cur_prefix, cutoff_startval=cur_cutoff)
   return(cutoff)
 }
 
@@ -137,29 +137,30 @@ demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores
     if(!all(tagnames %in% names(cutoff_list))){
       stop(paste0("cutoff_list has to be named list which conatins all tagnames: ", paste0(tagnames, collapse = ",")))
     }
+    cur_cutoff_list = cutoff_list
   }else{
     if(!require("choisycutoff")){
       BiocManager::install('shengqh/cutoff')
       library(choisycutoff)
     }
     mc.cores<-check_mc_cores(mc.cores)
-    cutoff_list = do_cutoff_parallel(
+    cur_cutoff_list = do_cutoff_parallel(
       tagnames = tagnames, 
       data = data, 
       output_prefix = output_prefix, 
       cutoff_startval = cutoff_startval, 
       mc.cores=mc.cores )
-    names(cutoff_list) = tagnames
+    names(cur_cutoff_list) = tagnames
   }
   if(!is.null(output_prefix)){
-    saveRDS(cutoff_list, paste0(output_prefix, ".cutoff_list.rds"))
+    saveRDS(cur_cutoff_list, paste0(output_prefix, ".cutoff_list.rds"))
   }
 
-  print(cutoff_list)
+  print(cur_cutoff_list)
 
   tagname=tagnames[1]  
   for (tagname in tagnames) {
-    cutoff = cutoff_list[tagname]
+    cutoff = cur_cutoff_list[tagname]
     data[,paste0(tagname,"_pos")] = ifelse(data[,tagname]>cutoff, tagname, "Negative")
   }
   
