@@ -112,8 +112,12 @@ my_cutoff<-function (my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
     names(x) <- the_names
     return(as.list(x))
   })
+
+  message(paste0(tagname, " choisycutoff:::lci0 start ..."))
   out <- sapply(coef, function(x) choisycutoff:::lci0(x, mean(my_out$lambda), 
                                                       choisycutoff:::hash[[my_out$D1]], choisycutoff:::hash[[my_out$D2]], my_out$data, t))
+  message(paste0(tagname, " choisycutoff:::lci0 finished ..."))
+
   lambda <- rnorm(nb, out[1, ], out[2, ])
   coef <- sapply(coef, function(x) unlist(x))
   the_names <- c(rownames(coef), "lambda")
@@ -122,8 +126,11 @@ my_cutoff<-function (my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
     names(x) <- the_names
     return(as.list(x))
   })
-  out <- sapply(coef, function(x) with(x, choisycutoff:::cutoff0(mu1, 
-                                                                 sigma1, mu2, sigma2, lambda, my_out$D1, my_out$D2, distr, type1)))
+
+  message(paste0(tagname, " choisycutoff:::cutoff0 start ..."))
+  out <- sapply(coef, function(x) with(x, choisycutoff:::cutoff0(mu1, sigma1, mu2, sigma2, lambda, my_out$D1, my_out$D2, distr, type1)))
+  message(paste0(tagname, " choisycutoff:::cutoff0 finished ..."))
+
   out <- MASS::fitdistr(out, "normal")
   the_mean <- out$estimate["mean"]
   level <- (1 - level)/2
@@ -137,12 +144,27 @@ my_cutoff<-function (my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
 # ----
 
 get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0){
+  message(paste0(tagname, " my_em start ..."))
   my_out <- my_em(values,"normal","normal", cutoff_point=cur_startval)
+  message(paste0(tagname, " my_em finished"))
+
+  coef = my_out$out@coef
   
   if(!is.null(prefix)){
     saveRDS(my_out, paste0(prefix, ".em.rds"))
   }
 
+  if(!is.null(prefix)){
+    png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
+    hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
+    lines(density(values),lwd=1.5,col="blue")
+    lines(my_out,lwd=1.5,col="red")
+    if(cur_startval != 0){
+      abline(v=cur_startval,lwd=1.5,col="green")
+    }
+    dev.off()
+  }
+  
   cut_off <- tryCatch({
       my_cutoff(my_out)
     }, error=function(e){
@@ -154,7 +176,7 @@ get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0){
       }
     }
   )
-  message(paste0("estimated cutoff of ", tagname, ": ", cut_off[1]))
+  message(paste0(tagname, " estimated cutoff = ", cut_off[1]))
 
   if(!is.null(prefix)){
     png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)

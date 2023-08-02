@@ -41,7 +41,7 @@ do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0
   }
   values=values[values>0] # remove count = 0
 
-  message(paste0("get cutoff of ", tagname, " with start value ", cur_startval, " ..."))
+  message(paste0(tagname, " get cutoff with start value ", cur_startval, " ..."))
   if(is.null(output_prefix)){
     cur_prefix = NULL  
   }else{
