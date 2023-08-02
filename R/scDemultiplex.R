@@ -22,9 +22,9 @@ check_mc_cores<-function(mc.cores) {
   return(mc.cores)
 }
 
-do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
+do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0){
   values=data[,tagname]
-  values=values[values>0] # remove count = 0
+  values=order(values)
 
   if(is.list(cutoff_startval)){
     if(tagname %in% names(cutoff_startval)){
@@ -35,6 +35,14 @@ do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   }else{
     cur_cutoff = cutoff_startval
   }
+  if(cur_cutoff == 0){
+    pos = round(length(values) * (n_tags - 1) / n_tags)
+    cur_cutoff = values[pos]
+  }
+  print(paste0("use ", cur_cutoff, " as start value of the cutoff for tag ", tagname, "."))
+
+  values=values[values>0] # remove count = 0
+
   print(paste0("get cutoff of ", tagname, " ..."))
   if(is.null(output_prefix)){
     cur_prefix = NULL  
@@ -53,13 +61,13 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
     #https://stackoverflow.com/questions/12023403/using-parlapply-and-clusterexport-inside-a-function
     clusterExport(cl,list('zoo','rollapply', 'my_startval', 'my_cutoff', 'get_cutoff', "my_em", 'do_cutoff','data',"output_prefix","cutoff_startval"), envir=environment())
     system.time(
-      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, output_prefix, cutoff_startval))
+      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, length(tagnames), output_prefix, cutoff_startval)))
     )
     stopCluster(cl)
   }else{
     cat("using", mc.cores, "threads in", .Platform$OS.type, " by mclapply.\n")
     system.time(
-      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
+      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, n_tags=length(tagnames), output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
     )
   }
   return(results)
