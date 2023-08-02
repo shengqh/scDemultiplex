@@ -149,9 +149,9 @@ get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0){
       my_cutoff(my_out)
     }, error=function(e){
       if(cur_startval == 0){
-        stop(paste0("failed to find cutoff due to: ", e))
+        stop(paste0(tagname, " failed failed: ", e))
       }else{
-        print(paste0("failed to find cutoff due to: ", e, ", use start value ", cur_startval, " as cutoff"))
+        print(paste0(tagname, " failed failed: ", e, ", use start value ", cur_startval, " as cutoff."))
         return(cur_startval)
       }
     }
