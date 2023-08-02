@@ -61,7 +61,7 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
     #https://stackoverflow.com/questions/12023403/using-parlapply-and-clusterexport-inside-a-function
     clusterExport(cl,list('zoo','rollapply', 'my_startval', 'my_cutoff', 'get_cutoff', "my_em", 'do_cutoff','data',"output_prefix","cutoff_startval"), envir=environment())
     system.time(
-      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, length(tagnames), output_prefix, cutoff_startval)))
+      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, length(tagnames), output_prefix, cutoff_startval))
     )
     stopCluster(cl)
   }else{
