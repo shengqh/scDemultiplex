@@ -136,8 +136,10 @@ my_cutoff<-function (my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
 
 # ----
 
-get_cutoff<-function(values, prefix=NULL, cutoff_startval=0){
-  my_out <- my_em(values,"normal","normal", cutoff_point=cutoff_startval)
+get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0){
+  my_out <- my_em(values,"normal","normal", cutoff_point=cur_startval)
+  #print(paste0("my_out from my_em for ", tagname, ":"))
+  #print(my_out$out@coef)
   
   if(!is.null(prefix)){
     saveRDS(my_out, paste0(prefix, ".em.rds"))
@@ -146,22 +148,23 @@ get_cutoff<-function(values, prefix=NULL, cutoff_startval=0){
   cut_off <- tryCatch({
       my_cutoff(my_out)
     }, error=function(e){
-      if(cutoff_startval == 0){
+      if(cur_startval == 0){
         stop(paste0("failed to find cutoff due to: ", e))
       }else{
-        print(paste0("failed to find cutoff due to: ", e, ", use start value ", cutoff_startval, " as cutoff"))
-        return(cutoff_startval)
+        print(paste0("failed to find cutoff due to: ", e, ", use start value ", cur_startval, " as cutoff"))
+        return(cur_startval)
       }
     }
   )
+  print(paste0("estimated cutoff of ", tagname, ": ", cut_off[1]))
 
   if(!is.null(prefix)){
     png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
     hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
     lines(density(values),lwd=1.5,col="blue")
     lines(my_out,lwd=1.5,col="red")
-    if(cutoff_startval != 0){
-      abline(v=cutoff_startval,lwd=1.5,col="green")
+    if(cur_startval != 0){
+      abline(v=cur_startval,lwd=1.5,col="green")
     }
     abline(v=cut_off[1],lwd=1.5,col="brown")
     dev.off()

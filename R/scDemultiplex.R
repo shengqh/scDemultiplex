@@ -28,32 +28,31 @@ do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0
 
   if(is.list(cutoff_startval)){
     if(tagname %in% names(cutoff_startval)){
-      cur_cutoff = cutoff_startval[tagname]
+      cur_startval = cutoff_startval[tagname]
     }else{
-      cur_cutoff = 0
+      cur_startval = 0
     }
   }else{
-    cur_cutoff = cutoff_startval
+    cur_startval = cutoff_startval
   }
-  if(cur_cutoff == 0){
+  if(cur_startval == 0){
     pos = round(length(values) * (n_tags - 1) / n_tags)
-    cur_cutoff = values[pos]
+    cur_startval = values[pos]
   }
-  print(paste0("use ", cur_cutoff, " as start value of the cutoff for tag ", tagname, "."))
-
   values=values[values>0] # remove count = 0
 
-  print(paste0("get cutoff of ", tagname, " ..."))
+  print(paste0("get cutoff of ", tagname, " with start value ", cur_startval, " ..."))
   if(is.null(output_prefix)){
     cur_prefix = NULL  
   }else{
     cur_prefix = paste0(output_prefix, "_", tagname)
   }
-  cutoff=get_cutoff(values=values, prefix=cur_prefix, cutoff_startval=cur_cutoff)
+  cutoff=get_cutoff(tagname=tagname, values=values, prefix=cur_prefix, cur_startval=cur_startval)
   return(cutoff)
 }
 
 do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.cores){
+  n_tags=length(tagnames)
   if (is_windows() & (mc.cores > 1)) {
     cat("using", mc.cores, "threads in", .Platform$OS.type, " by parLapply.\n")
     cl <- makeCluster(mc.cores)  
@@ -61,13 +60,13 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
     #https://stackoverflow.com/questions/12023403/using-parlapply-and-clusterexport-inside-a-function
     clusterExport(cl,list('zoo','rollapply', 'my_startval', 'my_cutoff', 'get_cutoff', "my_em", 'do_cutoff','data',"output_prefix","cutoff_startval"), envir=environment())
     system.time(
-      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, length(tagnames), output_prefix, cutoff_startval))
+      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, n_tags, output_prefix, cutoff_startval))
     )
     stopCluster(cl)
   }else{
     cat("using", mc.cores, "threads in", .Platform$OS.type, " by mclapply.\n")
     system.time(
-      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, n_tags=length(tagnames), output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
+      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data=data, n_tags=n_tags, output_prefix=output_prefix, cutoff_startval=cutoff_startval, mc.cores=mc.cores))
     )
   }
   return(results)
