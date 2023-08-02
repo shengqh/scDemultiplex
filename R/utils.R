@@ -138,8 +138,6 @@ my_cutoff<-function (my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
 
 get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0){
   my_out <- my_em(values,"normal","normal", cutoff_point=cur_startval)
-  #print(paste0("my_out from my_em for ", tagname, ":"))
-  #print(my_out$out@coef)
   
   if(!is.null(prefix)){
     saveRDS(my_out, paste0(prefix, ".em.rds"))
@@ -151,12 +149,12 @@ get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0){
       if(cur_startval == 0){
         stop(paste0(tagname, " failed failed: ", e))
       }else{
-        print(paste0(tagname, " failed failed: ", e, ", use start value ", cur_startval, " as cutoff."))
+        warning(paste0(tagname, " failed failed: ", e, ", use start value ", cur_startval, " as cutoff."))
         return(cur_startval)
       }
     }
   )
-  print(paste0("estimated cutoff of ", tagname, ": ", cut_off[1]))
+  message(paste0("estimated cutoff of ", tagname, ": ", cut_off[1]))
 
   if(!is.null(prefix)){
     png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)

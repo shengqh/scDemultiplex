@@ -41,7 +41,7 @@ do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0
   }
   values=values[values>0] # remove count = 0
 
-  print(paste0("get cutoff of ", tagname, " with start value ", cur_startval, " ..."))
+  message(paste0("get cutoff of ", tagname, " with start value ", cur_startval, " ..."))
   if(is.null(output_prefix)){
     cur_prefix = NULL  
   }else{
@@ -187,7 +187,7 @@ demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores
 estimate_alpha<-function(name, taglist){
   x <-taglist[[name]]
   p.tu <- goodTuringProportions(colSums(x))
-  print(paste0("    dirmult ", name, " ..."))
+  message(paste0("    dirmult ", name, " ..."))
   theta <- dirmult(x, trace=F)$theta
   alpha_t <- (1-theta)/theta
   alpha_est <- alpha_t*p.tu
@@ -289,14 +289,14 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
   
   kk=1
   for(kk in 1:iterations){
-    print(paste0("refine iteration ", kk))
+    message(paste0("refine iteration ", kk))
 
     lastClassification = dd$HTO_classification
     
     taglist <- split(dd[tag.var], dd$HTO_classification)
     taglist <- taglist[! names(taglist) %in% c("Negative","Doublet")]
     
-    print("  estimate alpha ...")
+    message("  estimate alpha ...")
     tic()
     out.alpha.est <- do_estimate_alpha_parallel(
       tagnames = names(taglist), 
@@ -306,7 +306,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
     names(out.alpha.est)<-names(taglist)
     
     # ----
-    print("  calculate pvalue ...")
+    message("  calculate pvalue ...")
     for(j in 1:nn.tag){
       alpha.est <- out.alpha.est[[tag.var[j]]]
       uu <- alpha.est[tag.var[j],]
@@ -326,7 +326,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
     
     # ----
     
-    print("  assign category ...")
+    message("  assign category ...")
     dd$HTO_classification.comb2 <- NA
     dd$HTO_classification.list2 <- NA
     #p.cut <- 0.025
@@ -360,7 +360,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
     rm(i)
 
     if(all(lastClassification == dd$HTO_classification)){
-      print("  no change anymore, stop.")
+      message("  no change anymore, stop.")
       break
     }
     
@@ -374,7 +374,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
 
     if(should_stop(lastClassification, dd$HTO_classification, min_singlet_cross_assigned, min_tag_cross_assigned)){
       dd$HTO_classification = lastClassification
-      print("  too many singlets shifted from multiple tags to another same tag, stop.")
+      warning("  too many singlets shifted from multiple tags to another same tag, stop.")
       break
     }
   }
