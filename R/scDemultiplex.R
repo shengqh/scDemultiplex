@@ -24,7 +24,7 @@ check_mc_cores<-function(mc.cores) {
 
 do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0){
   values=data[,tagname]
-  values=order(values)
+  values=values[order(values)]
 
   if(is.list(cutoff_startval)){
     if(tagname %in% names(cutoff_startval)){
