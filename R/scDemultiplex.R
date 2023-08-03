@@ -22,40 +22,39 @@ check_mc_cores<-function(mc.cores) {
   return(mc.cores)
 }
 
-do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0){
-  values=unlist(data[,tagname])
+do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
+  values=data[,tagname]
+  values=values[values>0] # remove count = 0
   values=values[order(values)]
+  
 
   if(is.list(cutoff_startval)){
     if(tagname %in% names(cutoff_startval)){
-      cur_startval = cutoff_startval[tagname]
+      cur_cutoff = cutoff_startval[tagname]
     }else{
-      cur_startval = 0
+      cur_cutoff = 0
     }
   }else{
-    cur_startval = cutoff_startval
+    cur_cutoff = cutoff_startval
   }
 
   #assume the top 1/n cells are positive by default
+  n_tags = ncol(data)
   n_perc = max(1, n_tags - 1)
   pos = round(length(values) * n_perc / n_tags)
   default_value = values[pos]
 
-  values=values[values>0] # remove count = 0
-
-  message(paste0(tagname, " get cutoff with start value ", cur_startval, " ..."))
+  message(paste0(tagname, " find cutoff ..."))
   if(is.null(output_prefix)){
     cur_prefix = NULL  
   }else{
     cur_prefix = paste0(output_prefix, "_", tagname)
   }
-  cutoff=get_cutoff(tagname=tagname, values=values, prefix=cur_prefix, cur_startval=cur_startval, default_value=default_value)
+  cutoff=get_cutoff(tagname, values, cur_prefix, cur_cutoff, default_value)
   return(cutoff)
 }
 
 do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.cores){
-  n_tags=length(tagnames)
-  tagname=tagnames[1]
   if (is_windows() & (mc.cores > 1)) {
     cat("using", mc.cores, "threads in", .Platform$OS.type, " by parLapply.\n")
     cl <- makeCluster(mc.cores)  
@@ -63,13 +62,13 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
     #https://stackoverflow.com/questions/12023403/using-parlapply-and-clusterexport-inside-a-function
     clusterExport(cl,list('zoo','rollapply', 'my_startval', 'my_cutoff', 'get_cutoff', "my_em", 'do_cutoff','data',"output_prefix","cutoff_startval"), envir=environment())
     system.time(
-      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, n_tags, output_prefix, cutoff_startval))
+      results<-unlist(parLapply(cl,tagnames,fun=do_cutoff, data, output_prefix, cutoff_startval))
     )
     stopCluster(cl)
   }else{
     cat("using", mc.cores, "threads in", .Platform$OS.type, " by mclapply.\n")
     system.time(
-      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data=data, n_tags=n_tags, output_prefix=output_prefix, cutoff_startval=cutoff_startval, mc.cores=mc.cores))
+      results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
     )
   }
   return(results)
@@ -139,30 +138,29 @@ demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores
     if(!all(tagnames %in% names(cutoff_list))){
       stop(paste0("cutoff_list has to be named list which conatins all tagnames: ", paste0(tagnames, collapse = ",")))
     }
-    cur_cutoff_list = cutoff_list
   }else{
     if(!require("choisycutoff")){
       BiocManager::install('shengqh/cutoff')
       library(choisycutoff)
     }
     mc.cores<-check_mc_cores(mc.cores)
-    cur_cutoff_list = do_cutoff_parallel(
+    cutoff_list = do_cutoff_parallel(
       tagnames = tagnames, 
       data = data, 
       output_prefix = output_prefix, 
       cutoff_startval = cutoff_startval, 
       mc.cores=mc.cores )
-    names(cur_cutoff_list) = tagnames
+    names(cutoff_list) = tagnames
   }
   if(!is.null(output_prefix)){
-    saveRDS(cur_cutoff_list, paste0(output_prefix, ".cutoff_list.rds"))
+    saveRDS(cutoff_list, paste0(output_prefix, ".cutoff_list.rds"))
   }
 
-  print(cur_cutoff_list)
+  print(cutoff_list)
 
   tagname=tagnames[1]  
   for (tagname in tagnames) {
-    cutoff = cur_cutoff_list[tagname]
+    cutoff = cutoff_list[tagname]
     data[,paste0(tagname,"_pos")] = ifelse(data[,tagname]>cutoff, tagname, "Negative")
   }
   
@@ -190,7 +188,7 @@ demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores
 estimate_alpha<-function(name, taglist){
   x <-taglist[[name]]
   p.tu <- goodTuringProportions(colSums(x))
-  message(paste0("    dirmult ", name, " ..."))
+  print(paste0("    dirmult ", name, " ..."))
   theta <- dirmult(x, trace=F)$theta
   alpha_t <- (1-theta)/theta
   alpha_est <- alpha_t*p.tu
@@ -292,14 +290,14 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
   
   kk=1
   for(kk in 1:iterations){
-    message(paste0("refine iteration ", kk))
+    print(paste0("refine iteration ", kk))
 
     lastClassification = dd$HTO_classification
     
     taglist <- split(dd[tag.var], dd$HTO_classification)
     taglist <- taglist[! names(taglist) %in% c("Negative","Doublet")]
     
-    message("  estimate alpha ...")
+    print("  estimate alpha ...")
     tic()
     out.alpha.est <- do_estimate_alpha_parallel(
       tagnames = names(taglist), 
@@ -309,7 +307,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
     names(out.alpha.est)<-names(taglist)
     
     # ----
-    message("  calculate pvalue ...")
+    print("  calculate pvalue ...")
     for(j in 1:nn.tag){
       alpha.est <- out.alpha.est[[tag.var[j]]]
       uu <- alpha.est[tag.var[j],]
@@ -329,7 +327,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
     
     # ----
     
-    message("  assign category ...")
+    print("  assign category ...")
     dd$HTO_classification.comb2 <- NA
     dd$HTO_classification.list2 <- NA
     #p.cut <- 0.025
@@ -363,7 +361,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
     rm(i)
 
     if(all(lastClassification == dd$HTO_classification)){
-      message("  no change anymore, stop.")
+      print("  no change anymore, stop.")
       break
     }
     
@@ -377,7 +375,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
 
     if(should_stop(lastClassification, dd$HTO_classification, min_singlet_cross_assigned, min_tag_cross_assigned)){
       dd$HTO_classification = lastClassification
-      warning("  too many singlets shifted from multiple tags to another same tag, stop.")
+      print("  too many singlets shifted from multiple tags to another same tag, stop.")
       break
     }
   }

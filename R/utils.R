@@ -102,22 +102,18 @@ my_em<-function(values, data_name="em", D1="normal", D2="normal", t=1e-64, cutof
 
 # ----
 
-my_cutoff<-function (tagname, my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level = 0.95) 
+my_cutoff<-function (object, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level = 0.95) 
 {
-  coef <- my_out$out@coef
+  coef <- object$out@coef
   the_names <- names(coef)
-  coef <- exp(mc2d::rmultinormal(nb, coef, as.vector(my_out$out@vcov)))
+  coef <- exp(mc2d::rmultinormal(nb, coef, as.vector(object$out@vcov)))
   coef <- as.list(data.frame(t(coef)))
   coef <- lapply(coef, function(x) {
     names(x) <- the_names
     return(as.list(x))
   })
-
-  #message(paste0(tagname, " choisycutoff:::lci0 start ..."))
-  out <- sapply(coef, function(x) choisycutoff:::lci0(x, mean(my_out$lambda), 
-                                                      choisycutoff:::hash[[my_out$D1]], choisycutoff:::hash[[my_out$D2]], my_out$data, t))
-  #message(paste0(tagname, " choisycutoff:::lci0 finished ..."))
-
+  out <- sapply(coef, function(x) choisycutoff:::lci0(x, mean(object$lambda), 
+                                                      choisycutoff:::hash[[object$D1]], choisycutoff:::hash[[object$D2]], object$data, t))
   lambda <- rnorm(nb, out[1, ], out[2, ])
   coef <- sapply(coef, function(x) unlist(x))
   the_names <- c(rownames(coef), "lambda")
@@ -126,15 +122,9 @@ my_cutoff<-function (tagname, my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.0
     names(x) <- the_names
     return(as.list(x))
   })
-
-  #message(paste0(tagname, " choisycutoff:::cutoff0 start ..."))
-  out <- sapply(coef, function(x) with(x, choisycutoff:::cutoff0(mu1, sigma1, mu2, sigma2, lambda, my_out$D1, my_out$D2, distr, type1)))
-  #message(paste0(tagname, " choisycutoff:::cutoff0 finished ..."))
-
-  #message(paste0(tagname, " MASS::fitdistr start ..."))
+  out <- sapply(coef, function(x) with(x, choisycutoff:::cutoff0(mu1, 
+                                                                 sigma1, mu2, sigma2, lambda, object$D1, object$D2, distr, type1)))
   out <- MASS::fitdistr(out, "normal")
-  #message(paste0(tagname, " MASS::fitdistr finished"))
-
   the_mean <- out$estimate["mean"]
   level <- (1 - level)/2
   level <- c(level, 1 - level)
@@ -147,16 +137,12 @@ my_cutoff<-function (tagname, my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.0
 # ----
 
 get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0, default_value=0){
-  #message(paste0(tagname, " my_em start ..."))
   my_out <- my_em(values,"normal","normal", cutoff_point=cur_startval)
-  #message(paste0(tagname, " my_em finished"))
-
-  coef = my_out$out@coef
   
   if(!is.null(prefix)){
     saveRDS(my_out, paste0(prefix, ".em.rds"))
   }
-
+  
   if(!is.null(prefix)){
     png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
     hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
@@ -167,9 +153,9 @@ get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0, default_value
     }
     dev.off()
   }
-  
+
   cut_off <- tryCatch({
-      my_cutoff(tagname, my_out)
+      my_cutoff(my_out)
     }, error=function(e){
       if(default_value == 0){
         stop(paste0(tagname, " failed: ", e))
@@ -180,7 +166,7 @@ get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0, default_value
     }
   )
   message(paste0(tagname, " estimated cutoff = ", cut_off[1]))
-
+  
   if(!is.null(prefix)){
     png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
     hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
@@ -328,7 +314,6 @@ build_summary<-function(allres, output_prefix, nameMapFile=NA){
   print(g)
   dev.off()
 }
-
 
 
 
