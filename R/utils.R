@@ -146,7 +146,7 @@ my_cutoff<-function (tagname, my_out, t = 1e-64, nb = 10, distr = 2, type1 = 0.0
 
 # ----
 
-get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0){
+get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0, default_value=0){
   #message(paste0(tagname, " my_em start ..."))
   my_out <- my_em(values,"normal","normal", cutoff_point=cur_startval)
   #message(paste0(tagname, " my_em finished"))
@@ -171,11 +171,11 @@ get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0){
   cut_off <- tryCatch({
       my_cutoff(tagname, my_out)
     }, error=function(e){
-      if(cur_startval == 0){
-        stop(paste0(tagname, " failed failed: ", e))
+      if(default_value == 0){
+        stop(paste0(tagname, " failed: ", e))
       }else{
-        message(paste0(tagname, " failed failed: ", e, ", use start value ", cur_startval, " as cutoff."))
-        return(cur_startval)
+        message(paste0(tagname, " failed: ", e, ", use default value as cutoff."))
+        return(default_value)
       }
     }
   )

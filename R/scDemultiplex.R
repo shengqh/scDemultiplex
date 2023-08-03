@@ -35,11 +35,12 @@ do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0
   }else{
     cur_startval = cutoff_startval
   }
-  if(cur_startval == 0){
-    n_perc = max(1, n_tags - 1)
-    pos = round(length(values) * n_perc / n_tags)
-    cur_startval = values[pos]
-  }
+
+  #assume the top 1/n cells are positive by default
+  n_perc = max(1, n_tags - 1)
+  pos = round(length(values) * n_perc / n_tags)
+  default_value = values[pos]
+
   values=values[values>0] # remove count = 0
 
   message(paste0(tagname, " get cutoff with start value ", cur_startval, " ..."))
@@ -48,7 +49,7 @@ do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0
   }else{
     cur_prefix = paste0(output_prefix, "_", tagname)
   }
-  cutoff=get_cutoff(tagname=tagname, values=values, prefix=cur_prefix, cur_startval=cur_startval)
+  cutoff=get_cutoff(tagname=tagname, values=values, prefix=cur_prefix, cur_startval=cur_startval, default_value=default_value)
   return(cutoff)
 }
 
