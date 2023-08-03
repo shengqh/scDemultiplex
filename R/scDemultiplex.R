@@ -25,8 +25,6 @@ check_mc_cores<-function(mc.cores) {
 do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   values=data[,tagname]
   values=values[values>0] # remove count = 0
-  values=values[order(values)]
-  
 
   if(is.list(cutoff_startval)){
     if(tagname %in% names(cutoff_startval)){
@@ -37,25 +35,23 @@ do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   }else{
     cur_cutoff = cutoff_startval
   }
-
-  #assume the top 1/n cells are positive by default
-  n_tags = ncol(data)
-  n_perc = max(1, n_tags - 1)
-  pos = round(length(values) * n_perc / n_tags)
-  default_value = values[pos]
-
+  #don't use message in function called in thread, it might bring trouble.
+  print(paste0("get cutoff of ", tagname, " ..."))
   if(is.null(output_prefix)){
     cur_prefix = NULL  
   }else{
     cur_prefix = paste0(output_prefix, "_", tagname)
   }
-  cutoff=get_cutoff(tagname, values, cur_prefix, cur_cutoff, default_value)
+
+  ntags = ncol(data)
+
+  cutoff=get_cutoff(tagname, values, ntags, cur_prefix, cur_cutoff)
   return(cutoff)
 }
 
 do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.cores){
   if (is_windows() & (mc.cores > 1)) {
-    cat("using", mc.cores, "threads in", .Platform$OS.type, " by parLapply.\n")
+    print(paste("using", mc.cores, "threads in", .Platform$OS.type, " by parLapply."))
     cl <- makeCluster(mc.cores)  
     registerDoParallel(cl)  
     #https://stackoverflow.com/questions/12023403/using-parlapply-and-clusterexport-inside-a-function
@@ -65,7 +61,7 @@ do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.
     )
     stopCluster(cl)
   }else{
-    cat("using", mc.cores, "threads in", .Platform$OS.type, " by mclapply.\n")
+    print(paste("using", mc.cores, "threads in", .Platform$OS.type, " by mclapply."))
     system.time(
       results<-unlist(parallel::mclapply(tagnames, do_cutoff, data = data, output_prefix = output_prefix, cutoff_startval = cutoff_startval, mc.cores=mc.cores))
     )

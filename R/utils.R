@@ -136,53 +136,32 @@ my_cutoff<-function (object, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
 
 # ----
 
-get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0, default_value=0){
-  message(paste0(tagname, " find cutoff with cur_startval=", cur_startval, ", default_value=", default_value, "..."))
-
-  my_out <- my_em(values,"normal","normal", cutoff_point=cur_startval)
+get_cutoff<-function(tagname, values, ntags, prefix=NULL, cutoff_startval=0){
+  my_out <- my_em(values,"normal","normal", cutoff_point=cutoff_startval)
   
   if(!is.null(prefix)){
     saveRDS(my_out, paste0(prefix, ".em.rds"))
   }
   
-  cut_off <- tryCatch({
+  cut_off <- tryCatch(
+    expr = {
       my_cutoff(my_out)
-    }, error=function(e){
-      if(default_value == 0){
-        if(!is.null(prefix)){
-          png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
-          hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
-          lines(density(values),lwd=1.5,col="blue")
-          lines(my_out,lwd=1.5,col="red")
-          if(cur_startval != 0){
-            abline(v=cur_startval,lwd=1.5,col="green", lty=3)
-          }
-          if(default_value != 0){
-            abline(v=default_value,lwd=1.5,col="yellow", lty=3)
-          }
-          dev.off()
-        }
-
-        stop(paste0(tagname, " failed: ", e))
-      }else{
-        message(paste0(tagname, " failed: ", e, ", use default value as cutoff."))
-        return(default_value)
-      }
+    },
+    error = function(e){ 
+      n_perc = max(1, ntags - 1)
+      pos = round(length(values) * n_perc / ntags)
+      values = values[order(values)]
+      #don't use message in function called in thread, it might bring trouble.
+      print(paste0(tagname, " failed: ", e, ", estimated default value: ", values[pos]))
+      return(values[pos])
     }
   )
-  message(paste0(tagname, " estimated cutoff = ", cut_off[1]))
-  
+
   if(!is.null(prefix)){
     png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
     hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
     lines(density(values),lwd=1.5,col="blue")
     lines(my_out,lwd=1.5,col="red")
-    if(cur_startval != 0){
-      abline(v=cur_startval,lwd=1.5,col="green", lty=3)
-    }
-    if(default_value != 0){
-      abline(v=default_value,lwd=1.5,col="yellow", lty=3)
-    }
     abline(v=cut_off[1],lwd=1.5,col="brown")
     dev.off()
   }
@@ -322,6 +301,3 @@ build_summary<-function(allres, output_prefix, nameMapFile=NA){
   print(g)
   dev.off()
 }
-
-
-
