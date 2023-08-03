@@ -23,7 +23,7 @@ check_mc_cores<-function(mc.cores) {
 }
 
 do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0){
-  values=data[,tagname]
+  values=unlist(data[,tagname])
   values=values[order(values)]
 
   if(is.list(cutoff_startval)){
@@ -54,6 +54,7 @@ do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0
 
 do_cutoff_parallel<-function(tagnames, data, output_prefix, cutoff_startval, mc.cores){
   n_tags=length(tagnames)
+  tagname=tagnames[1]
   if (is_windows() & (mc.cores > 1)) {
     cat("using", mc.cores, "threads in", .Platform$OS.type, " by parLapply.\n")
     cl <- makeCluster(mc.cores)  
