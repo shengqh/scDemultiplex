@@ -44,7 +44,6 @@ do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   pos = round(length(values) * n_perc / n_tags)
   default_value = values[pos]
 
-  message(paste0(tagname, " find cutoff ..."))
   if(is.null(output_prefix)){
     cur_prefix = NULL  
   }else{
