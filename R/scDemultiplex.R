@@ -25,6 +25,7 @@ check_mc_cores<-function(mc.cores) {
 do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   values=data[,tagname]
   values=values[values>0] # remove count = 0
+  values=values[order(values)]
 
   if(is.list(cutoff_startval)){
     if(tagname %in% names(cutoff_startval)){
@@ -35,13 +36,20 @@ do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   }else{
     cur_cutoff = cutoff_startval
   }
-  print(paste0("get cutoff of ", tagname, " ..."))
+
   if(is.null(output_prefix)){
     cur_prefix = NULL  
   }else{
     cur_prefix = paste0(output_prefix, "_", tagname)
   }
-  cutoff=get_cutoff(values, cur_prefix, cur_cutoff)
+
+  #assume the top 1/n cells are positive by default
+  n_tags = ncol(data)
+  n_perc = max(1, n_tags - 1)
+  pos = round(length(values) * n_perc / n_tags)
+  default_value = values[pos]
+
+  cutoff=get_cutoff(tagname, values, cur_prefix, cur_cutoff, default_value)
   return(cutoff)
 }
 
