@@ -145,21 +145,24 @@ get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0, default_value
     saveRDS(my_out, paste0(prefix, ".em.rds"))
   }
   
-  if(!is.null(prefix)){
-    png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
-    hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
-    lines(density(values),lwd=1.5,col="blue")
-    lines(my_out,lwd=1.5,col="red")
-    if(cur_startval != 0){
-      abline(v=cur_startval,lwd=1.5,col="green")
-    }
-    dev.off()
-  }
-
   cut_off <- tryCatch({
       my_cutoff(my_out)
     }, error=function(e){
       if(default_value == 0){
+        if(!is.null(prefix)){
+          png(paste0(prefix, ".cutoff.png"), width=2000, height=1600, res=300)
+          hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
+          lines(density(values),lwd=1.5,col="blue")
+          lines(my_out,lwd=1.5,col="red")
+          if(cur_startval != 0){
+            abline(v=cur_startval,lwd=1.5,col="green", lty=3)
+          }
+          if(default_value != 0){
+            abline(v=default_value,lwd=1.5,col="yellow", lty=3)
+          }
+          dev.off()
+        }
+
         stop(paste0(tagname, " failed: ", e))
       }else{
         message(paste0(tagname, " failed: ", e, ", use default value as cutoff."))
@@ -175,7 +178,10 @@ get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0, default_value
     lines(density(values),lwd=1.5,col="blue")
     lines(my_out,lwd=1.5,col="red")
     if(cur_startval != 0){
-      abline(v=cur_startval,lwd=1.5,col="green")
+      abline(v=cur_startval,lwd=1.5,col="green", lty=3)
+    }
+    if(default_value != 0){
+      abline(v=default_value,lwd=1.5,col="yellow", lty=3)
     }
     abline(v=cut_off[1],lwd=1.5,col="brown")
     dev.off()
