@@ -137,6 +137,8 @@ my_cutoff<-function (object, t = 1e-64, nb = 10, distr = 2, type1 = 0.05, level 
 # ----
 
 get_cutoff<-function(tagname, values, prefix=NULL, cur_startval=0, default_value=0){
+  message(paste0(tagname, " find cutoff with cur_startval=", cur_startval, ", default_value=", default_value, "..."))
+
   my_out <- my_em(values,"normal","normal", cutoff_point=cur_startval)
   
   if(!is.null(prefix)){
