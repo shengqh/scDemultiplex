@@ -36,7 +36,8 @@ do_cutoff<-function(tagname, data, n_tags, output_prefix=NULL, cutoff_startval=0
     cur_startval = cutoff_startval
   }
   if(cur_startval == 0){
-    pos = round(length(values) * (n_tags - 1) / n_tags)
+    n_perc = max(1, n_tags - 2)
+    pos = round(length(values) * n_perc / n_tags)
     cur_startval = values[pos]
   }
   values=values[values>0] # remove count = 0
