@@ -40,7 +40,7 @@ do_cutoff<-function(tagname, data, output_prefix=NULL, cutoff_startval=0){
   if(is.null(output_prefix)){
     cur_prefix = NULL  
   }else{
-    cur_prefix = paste0(output_prefix, "_", tagname)
+    cur_prefix = paste0(output_prefix, ".", tagname)
   }
 
   ntags = ncol(data)
@@ -132,6 +132,17 @@ demulti_cutoff<-function(counts, output_prefix=NULL, cutoff_startval=0, mc.cores
     }
     if(!all(tagnames %in% names(cutoff_list))){
       stop(paste0("cutoff_list has to be named list which conatins all tagnames: ", paste0(tagnames, collapse = ",")))
+    }
+    if(!is.null(output_prefix)){
+      for (tagname in tagnames) {
+        cutoff = cutoff_list[tagname]
+        values = data[,tagname]
+        png(paste0(output_prefix, ".", tagname, ".cutoff.png"), width=2000, height=1600, res=300)
+        hist(values,200,F,xlab="concentration",ylab="density", main=NULL,col="grey")
+        lines(density(values),lwd=1.5,col="blue")
+        abline(v=cutoff,lwd=1.5,col="brown")
+        dev.off()
+      }
     }
   }else{
     if(!require("choisycutoff")){
