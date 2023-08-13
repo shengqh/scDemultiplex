@@ -276,132 +276,141 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
   dd <- as.data.frame(dd)
   
   tag.var <- names(dd)
-  
-  nn.tag <- length(tag.var)
-  dd$total.count <- apply(dd, 1, sum)
-  NN <- dd$total.count
-  
-  start_time2 <- Sys.time()
-  
-  dd$HTO_classification <- unlist(obj[[init_column]])
-  
-  df<-data.frame(table(dd$HTO_classification))
-  df$Iteration=0
 
-  hc<-dd[,"HTO_classification", drop=FALSE]
-  colnames(hc)="0"
+  init_classification = unlist(obj[[init_column]])
+  classified_tags = unique(init_classification)
 
-  #cl <- makeCluster(nn.tag)  
-  #registerDoParallel(cl) 
-  
-  kk=1
-  for(kk in 1:iterations){
-    print(paste0("refine iteration ", kk))
+  if(!all(tag.var %in% classified_tags)){
+    missed = tag.var[! tag.var %in% classified_tags]
+    print(paste0("Warning: missing tags in the init classification, use init classification as final result: ", paste0(missed, collapse = ", ")))
+    obj$scDemultiplex = init_classification
+    obj$scDemultiplex.global = ifelse(obj$scDemultiplex %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex), "Singlet")
+  }else{
+    nn.tag <- length(tag.var)
+    dd$total.count <- apply(dd, 1, sum)
+    NN <- dd$total.count
+    
+    start_time2 <- Sys.time()
 
-    lastClassification = dd$HTO_classification
+    dd$HTO_classification <- init_classification
+    df<-data.frame(table(dd$HTO_classification))
+    df$Iteration=0
+
+    hc<-dd[,"HTO_classification", drop=FALSE]
+    colnames(hc)="0"
+
+    #cl <- makeCluster(nn.tag)  
+    #registerDoParallel(cl) 
     
-    taglist <- split(dd[tag.var], dd$HTO_classification)
-    taglist <- taglist[! names(taglist) %in% c("Negative","Doublet")]
-    
-    print("  estimate alpha ...")
-    tic()
-    out.alpha.est <- do_estimate_alpha_parallel(
-      tagnames = names(taglist), 
-      taglist=taglist, 
-      mc.cores=mc.cores)
-    toc()
-    names(out.alpha.est)<-names(taglist)
-    
-    # ----
-    print("  calculate pvalue ...")
-    for(j in 1:nn.tag){
-      alpha.est <- out.alpha.est[[tag.var[j]]]
-      uu <- alpha.est[tag.var[j],]
-      vv <- sum(alpha.est) - alpha.est[tag.var[j],]
+    kk=1
+    for(kk in 1:iterations){
+      print(paste0("refine iteration ", kk))
+
+      lastClassification = dd$HTO_classification
       
-      var.new <- paste(tag.var[j], ".pbb", sep = "")
-      dd[,var.new] <- NA
-      dd[,var.new] <- sapply(1:nrow(dd), function(x) pbb(dd[x, tag.var[j]], NN[x], uu, vv))
-      dd[,var.new] <- ifelse(dd[,var.new] < 0.5, dd[,var.new], 1 - dd[,var.new])
+      taglist <- split(dd[tag.var], dd$HTO_classification)
+      taglist <- taglist[! names(taglist) %in% c("Negative","Doublet")]
       
-      var.new1 <- paste(var.new, ".ps.pvalue.fdr", sep = "")
-      dd[,var.new1] <- p.adjust(dd[,var.new], method = "BH")
+      print("  estimate alpha ...")
+      tic()
+      out.alpha.est <- do_estimate_alpha_parallel(
+        tagnames = names(taglist), 
+        taglist=taglist, 
+        mc.cores=mc.cores)
+      toc()
+      names(out.alpha.est)<-names(taglist)
       
-      rm(var.new); rm(var.new1)
-    }
-    rm(j)
-    
-    # ----
-    
-    print("  assign category ...")
-    dd$HTO_classification.comb2 <- NA
-    dd$HTO_classification.list2 <- NA
-    #p.cut <- 0.025
-    #varp <- paste(tag.var, ".pbb", sep = "")
-    #p.cut <- 0.001
-    varp <- paste(tag.var, ".pbb.ps.pvalue.fdr", sep = "")
-    
-    for(i in 1:nrow(dd)){
-      out <- dd[i,varp]
-      out2 <- tag.var[which(out > p.cut)]
-      dd$HTO_classification.list2[i] <- length(out2)
-      dd$HTO_classification.comb2[i] <- paste(out2, collapse = "; ")
-      rm(out); rm(out2)
-    }
-    rm(i)
-    
-    dd$HTO_classification.comb2[which(dd$HTO_classification.list2 == 0)] <- "Negative"
-    
-    # ----
-    
-    for(i in 1:length(tag.var)){
-      if(refine_negative_doublet_only){
-        dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
-                                    dd$HTO_classification %in% c("Negative", "Doublet") &
-                                    dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
-      }else{
-        dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
-                                    dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
+      # ----
+      print("  calculate pvalue ...")
+      for(j in 1:nn.tag){
+        alpha.est <- out.alpha.est[[tag.var[j]]]
+        uu <- alpha.est[tag.var[j],]
+        vv <- sum(alpha.est) - alpha.est[tag.var[j],]
+        
+        var.new <- paste(tag.var[j], ".pbb", sep = "")
+        dd[,var.new] <- NA
+        dd[,var.new] <- sapply(1:nrow(dd), function(x) pbb(dd[x, tag.var[j]], NN[x], uu, vv))
+        dd[,var.new] <- ifelse(dd[,var.new] < 0.5, dd[,var.new], 1 - dd[,var.new])
+        
+        var.new1 <- paste(var.new, ".ps.pvalue.fdr", sep = "")
+        dd[,var.new1] <- p.adjust(dd[,var.new], method = "BH")
+        
+        rm(var.new); rm(var.new1)
+      }
+      rm(j)
+      
+      # ----
+      
+      print("  assign category ...")
+      dd$HTO_classification.comb2 <- NA
+      dd$HTO_classification.list2 <- NA
+      #p.cut <- 0.025
+      #varp <- paste(tag.var, ".pbb", sep = "")
+      #p.cut <- 0.001
+      varp <- paste(tag.var, ".pbb.ps.pvalue.fdr", sep = "")
+      
+      for(i in 1:nrow(dd)){
+        out <- dd[i,varp]
+        out2 <- tag.var[which(out > p.cut)]
+        dd$HTO_classification.list2[i] <- length(out2)
+        dd$HTO_classification.comb2[i] <- paste(out2, collapse = "; ")
+        rm(out); rm(out2)
+      }
+      rm(i)
+      
+      dd$HTO_classification.comb2[which(dd$HTO_classification.list2 == 0)] <- "Negative"
+      
+      # ----
+      
+      for(i in 1:length(tag.var)){
+        if(refine_negative_doublet_only){
+          dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
+                                      dd$HTO_classification %in% c("Negative", "Doublet") &
+                                      dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
+        }else{
+          dd$HTO_classification[which(dd$HTO_classification.list2 == 1 & 
+                                      dd$HTO_classification.comb2 == tag.var[i])] <- tag.var[i]
+        }
+      }
+      rm(i)
+
+      if(all(lastClassification == dd$HTO_classification)){
+        print("  no change anymore, stop.")
+        break
+      }
+      
+      cur_df<-data.frame(table(dd$HTO_classification))
+      cur_df$Iteration=kk   
+      df<-rbind(df, cur_df) 
+      
+      cur_hc<-dd[,"HTO_classification", drop=FALSE]
+      colnames(cur_hc)=kk
+      hc<-cbind(hc, cur_hc) 
+
+      if(kk > 1 & should_stop(lastClassification, dd$HTO_classification, min_singlet_cross_assigned, min_tag_cross_assigned)){
+        dd$HTO_classification = lastClassification
+        print("  too many singlets shifted from multiple tags to another same tag, stop.")
+        break
       }
     }
-    rm(i)
-
-    if(all(lastClassification == dd$HTO_classification)){
-      print("  no change anymore, stop.")
-      break
+    rm(kk)
+    
+    if(!is.null(output_prefix)){
+      mdf<-dcast(df, Var1~Iteration, value.var="Freq")
+      write.csv(mdf, paste0(output_prefix, ".iteration.csv"), row.names=FALSE)
+      write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=TRUE)
     }
     
-    cur_df<-data.frame(table(dd$HTO_classification))
-    cur_df$Iteration=kk   
-    df<-rbind(df, cur_df) 
+    end_time2 <- Sys.time()
+    time_run2 <- end_time2 - start_time2
+    time_run2
     
-    cur_hc<-dd[,"HTO_classification", drop=FALSE]
-    colnames(cur_hc)=kk
-    hc<-cbind(hc, cur_hc) 
+    # ----
+    
+    obj$scDemultiplex = factor(dd$HTO_classification, levels=c(tag.var, "Negative", "Doublet"))
+    obj$scDemultiplex.global = ifelse(obj$scDemultiplex %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex), "Singlet")
+  }
 
-    if(should_stop(lastClassification, dd$HTO_classification, min_singlet_cross_assigned, min_tag_cross_assigned)){
-      dd$HTO_classification = lastClassification
-      print("  too many singlets shifted from multiple tags to another same tag, stop.")
-      break
-    }
-  }
-  rm(kk)
-  
-  if(!is.null(output_prefix)){
-    mdf<-dcast(df, Var1~Iteration, value.var="Freq")
-    write.csv(mdf, paste0(output_prefix, ".iteration.csv"), row.names=FALSE)
-    write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=TRUE)
-  }
-  
-  end_time2 <- Sys.time()
-  time_run2 <- end_time2 - start_time2
-  time_run2
-  
-  # ----
-  
-  obj$scDemultiplex = factor(dd$HTO_classification, levels=c(tag.var, "Negative", "Doublet"))
-  obj$scDemultiplex.global = ifelse(obj$scDemultiplex %in% c("Negative", "Doublet"), as.character(obj$scDemultiplex), "Singlet")
-  
   return(obj)
 }
 
