@@ -399,6 +399,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
       mdf<-dcast(df, Var1~Iteration, value.var="Freq")
       write.csv(mdf, paste0(output_prefix, ".iteration.csv"), row.names=FALSE)
       write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=TRUE)
+      write.csv(dd, paste0(output_prefix, ".iteration.scores.csv"), row.names=TRUE)
     }
     
     end_time2 <- Sys.time()

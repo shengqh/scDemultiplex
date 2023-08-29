@@ -2,8 +2,8 @@ Encoding: UTF-8
 Package: scDemultiplex
 Type: Package
 Title: An iterative beta-binomial model-based method for accurate demultiplexing with hashtag oligos
-Version: 0.1.0
-Date: 2023-08-03
+Version: 0.1.1
+Date: 2023-08-28
 Authors@R: c(person("Li-ching", "Huang", email = "li-ching.huang.1@vumc.org", role = c("aut")),
              person("Lindsey", "Stolze", email = "lk.stolze@vumc.org", role = c("aut")),
              person("Alexander", "Gelbard", email = "alexander.gelbard@vumc.org", role = c("aut")),
