@@ -306,6 +306,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
     for(kk in 1:iterations){
       print(paste0("refine iteration ", kk))
 
+      last_dd = dd
       lastClassification = dd$HTO_classification
       
       taglist <- split(dd[tag.var], dd$HTO_classification)
@@ -388,7 +389,8 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
       hc<-cbind(hc, cur_hc) 
 
       if(kk > 1 & should_stop(lastClassification, dd$HTO_classification, min_singlet_cross_assigned, min_tag_cross_assigned)){
-        dd$HTO_classification = lastClassification
+        #dd$HTO_classification = lastClassification
+        dd = last_dd
         print("  too many singlets shifted from multiple tags to another same tag, stop.")
         break
       }
@@ -399,7 +401,7 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
       mdf<-dcast(df, Var1~Iteration, value.var="Freq")
       write.csv(mdf, paste0(output_prefix, ".iteration.csv"), row.names=FALSE)
       write.csv(hc, paste0(output_prefix, ".iteration.detail.csv"), row.names=TRUE)
-      write.csv(dd, paste0(output_prefix, ".iteration.scores.csv"), row.names=TRUE)
+      write.csv(dd, paste0(output_prefix, ".iteration.score.csv"), row.names=TRUE)
     }
     
     end_time2 <- Sys.time()
