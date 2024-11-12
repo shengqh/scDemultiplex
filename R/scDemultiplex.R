@@ -276,8 +276,10 @@ demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, in
   mc.cores<-check_mc_cores(mc.cores)
 
   if(is_seurat_5_plus(obj)){
+    cat("Seurat 5+ detected, using new Seurat functions.\n")
     dd <- obj[["HTO"]]$counts
   }else{
+    cat("Seurat 4 detected, using old Seurat functions.\n")
     dd <- obj[["HTO"]]@counts
   }
   dd <- t(as.matrix(dd)) # 8193   12
