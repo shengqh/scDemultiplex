@@ -232,6 +232,10 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
   return(result)
 }
 
+is_seurat_5_plus<-function(obj){
+  return(Version(obj) > '5')
+}
+
 ######################################
 
 #' @title demulti_refine:
@@ -271,7 +275,11 @@ should_stop<-function(begin_calls, refined_calls, min_singlet_cross_assigned=3, 
 demulti_refine<-function(obj, output_prefix=NULL, p.cut=0.001, iterations=10, init_column="scDemultiplex_cutoff", mc.cores=1, refine_negative_doublet_only=FALSE, min_singlet_cross_assigned=3, min_tag_cross_assigned=2){
   mc.cores<-check_mc_cores(mc.cores)
 
-  dd <- obj[["HTO"]]@counts
+  if(is_seurat_5_plus(obj)){
+    dd <- obj[["HTO"]]$counts
+  }else{
+    dd <- obj[["HTO"]]@counts
+  }
   dd <- t(as.matrix(dd)) # 8193   12
   dd <- as.data.frame(dd)
   
